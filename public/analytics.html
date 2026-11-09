@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics – NIRDESH</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌊</text></svg>">
+  <link rel="stylesheet" href="/css/global.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    .analytics-tabs {
+      display: flex;
+      gap: var(--space-1);
+      background: var(--gray-100);
+      border-radius: var(--radius-md);
+      padding: 4px;
+      margin-bottom: var(--space-6);
+      width: fit-content;
+    }
+
+    .tab-btn {
+      padding: 8px 20px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gray-500);
+      background: none;
+      border: none;
+      cursor: pointer;
+      transition: all var(--duration-fast);
+    }
+
+    .tab-btn.active {
+      background: var(--white);
+      color: var(--brand-700);
+      box-shadow: var(--shadow-xs);
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .metric-card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      border: 1px solid var(--border-light);
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .metric-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--grad, linear-gradient(90deg, var(--brand-500), var(--teal-500)));
+    }
+
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: var(--space-5);
+      margin-bottom: var(--space-8);
+    }
+
+    .kpi-box {
+      background: var(--white);
+      border-radius: var(--radius-md);
+      padding: var(--space-5);
+      border: 1px solid var(--border-light);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      box-shadow: var(--shadow-xs);
+    }
+
+    .kpi-title { font-size: 12px; color: var(--gray-500); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .kpi-value { font-size: 32px; font-weight: 800; letter-spacing: -1px; line-height: 1; }
+    .kpi-sub   { font-size: 12px; color: var(--gray-500); }
+
+    .hotspot-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-3) 0;
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .hotspot-row:last-child { border-bottom: none; }
+
+    .hotspot-rank {
+      width: 28px;
+      height: 28px;
+      background: var(--gray-100);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--gray-600);
+      flex-shrink: 0;
+    }
+
+    .hotspot-rank.top { background: var(--critical-bg); color: var(--critical); }
+
+    .hotspot-name { flex: 1; font-size: 14px; font-weight: 600; color: var(--gray-800); }
+    .hotspot-count { font-size: 20px; font-weight: 800; color: var(--brand-700); }
+    .hotspot-label { font-size: 11px; color: var(--gray-500); }
+
+    .economic-box {
+      background: linear-gradient(135deg, var(--brand-900), var(--brand-700));
+      color: var(--white);
+      border-radius: var(--radius-lg);
+      padding: var(--space-8);
+      text-align: center;
+    }
+
+    .economic-value {
+      font-size: 48px;
+      font-weight: 900;
+      letter-spacing: -2px;
+      line-height: 1;
+      background: linear-gradient(90deg, #64B5F6, #80DEEA);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <div id="sidebar-placeholder" data-active="/analytics"></div>
+
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>📊 Analytics & Insights</h1>
+        <p id="live-clock">—</p>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-ghost btn-sm">📥 Export PDF</button>
+        <button class="btn btn-primary btn-sm">🔄 Refresh Data</button>
+      </div>
+    </header>
+
+    <main class="page-body">
+
+      <!-- KPI strip -->
+      <div class="kpi-row">
+        <div class="kpi-box">
+          <div class="kpi-title">Total 2024 Incidents</div>
+          <div class="kpi-value" style="color:var(--brand-700)">2,050</div>
+          <div class="kpi-sub">▲ +290 from 2023</div>
+        </div>
+        <div class="kpi-box">
+          <div class="kpi-title">Economic Loss 2024</div>
+          <div class="kpi-value" style="color:var(--critical)">₹9,600 Cr</div>
+          <div class="kpi-sub">▲ +29.7% from 2023</div>
+        </div>
+        <div class="kpi-box">
+          <div class="kpi-title">AI Accuracy Rate</div>
+          <div class="kpi-value" style="color:var(--low)">94.2%</div>
+          <div class="kpi-sub">↑ from 89.1% last year</div>
+        </div>
+        <div class="kpi-box">
+          <div class="kpi-title">Avg Response Time</div>
+          <div class="kpi-value" style="color:var(--teal-700)">8.3 min</div>
+          <div class="kpi-sub">▼ 34% faster than 2022</div>
+        </div>
+        <div class="kpi-box">
+          <div class="kpi-title">Lives Impacted</div>
+          <div class="kpi-value" style="color:var(--high)">1.2M+</div>
+          <div class="kpi-sub">Annual estimate India-wide</div>
+        </div>
+        <div class="kpi-box">
+          <div class="kpi-title">Roads Monitored</div>
+          <div class="kpi-value" style="color:var(--brand-500)">42,000+</div>
+          <div class="kpi-sub">km across 312 districts</div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="analytics-tabs">
+        <button class="tab-btn active" onclick="switchTab('trends', this)">📈 Flood Trends</button>
+        <button class="tab-btn" onclick="switchTab('hotspots', this)">🔥 Hotspots</button>
+        <button class="tab-btn" onclick="switchTab('monthly', this)">📅 Monthly</button>
+        <button class="tab-btn" onclick="switchTab('economic', this)">💰 Economic</button>
+        <button class="tab-btn" onclick="switchTab('response', this)">🛟 Response</button>
+      </div>
+
+      <!-- Trends panel -->
+      <div id="tab-trends" class="tab-panel active">
+        <div class="grid-2 mb-6">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">📈 Flood Incidents 2019–2025</div>
+                <div class="card-subtitle">Annual count vs roads affected</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <canvas id="trend-chart" height="260"></canvas>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">🌧️ Rainfall Correlation</div>
+                <div class="card-subtitle">Rainfall mm vs flood incidents scatter</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <canvas id="scatter-chart" height="260"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">📊 State-wise Flood Impact 2024</div>
+              <div class="card-subtitle">Incidents by state · top 10</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <canvas id="state-chart" height="180"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hotspots panel -->
+      <div id="tab-hotspots" class="tab-panel">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">🔥 Top Flood Hotspots</div>
+                <div class="card-subtitle">5-year incident count · 2019-2024</div>
+              </div>
+            </div>
+            <div class="card-body" id="hotspots-list"></div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">📍 Hotspot Distribution</div>
+                <div class="card-subtitle">By region type</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <canvas id="hotspot-pie" height="260"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Monthly panel -->
+      <div id="tab-monthly" class="tab-panel">
+        <div class="card mb-6">
+          <div class="card-header">
+            <div>
+              <div class="card-title">📅 Monthly Distribution 2024</div>
+              <div class="card-subtitle">Incidents by month — peak Monsoon June–Sept</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <canvas id="monthly-chart" height="220"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">⏰ Hourly Pattern</div>
+              <div class="card-subtitle">Average incidents by hour of day — evening peak</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <canvas id="hourly-chart" height="180"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Economic panel -->
+      <div id="tab-economic" class="tab-panel">
+        <div class="grid-2 mb-6">
+          <div class="economic-box" style="grid-column:1/-1">
+            <div style="font-size:14px;color:rgba(255,255,255,0.65);margin-bottom:var(--space-2)">Estimated Total Economic Loss (2019–2024)</div>
+            <div class="economic-value">₹47,100 Crore</div>
+            <div style="font-size:14px;color:rgba(255,255,255,0.55);margin-top:var(--space-3)">Covering road damage · rescue ops · productivity loss · agricultural impact</div>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><div class="card-title">💰 Annual Economic Loss</div></div>
+            <div class="card-body">
+              <canvas id="economic-chart" height="260"></canvas>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">📊 Loss Breakdown 2024</div></div>
+            <div class="card-body">
+              <canvas id="loss-pie" height="260"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Response panel -->
+      <div id="tab-response" class="tab-panel">
+        <div class="grid-3 mb-6">
+          <div class="metric-card" style="--grad:linear-gradient(90deg,var(--low),#66BB6A)">
+            <div style="font-size:13px;color:var(--gray-500);font-weight:600">Avg Response Time</div>
+            <div style="font-size:40px;font-weight:900;color:var(--low);letter-spacing:-1px;margin:var(--space-2) 0">8.3 min</div>
+            <div style="font-size:12px;color:var(--gray-500)">▼ 34% faster than 2022 (12.6 min)</div>
+          </div>
+          <div class="metric-card" style="--grad:linear-gradient(90deg,var(--brand-500),var(--brand-400))">
+            <div style="font-size:13px;color:var(--gray-500);font-weight:600">Alerts Issued 2024</div>
+            <div style="font-size:40px;font-weight:900;color:var(--brand-600);letter-spacing:-1px;margin:var(--space-2) 0">8,420</div>
+            <div style="font-size:12px;color:var(--gray-500)">▲ 23% increase from 2023</div>
+          </div>
+          <div class="metric-card" style="--grad:linear-gradient(90deg,var(--teal-600),var(--teal-400))">
+            <div style="font-size:13px;color:var(--gray-500);font-weight:600">Lives Assisted</div>
+            <div style="font-size:40px;font-weight:900;color:var(--teal-700);letter-spacing:-1px;margin:var(--space-2) 0">1.2M+</div>
+            <div style="font-size:12px;color:var(--gray-500)">Evacuations + route guidance</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">⏱️ Response Time Trend (minutes)</div></div>
+          <div class="card-body">
+            <canvas id="response-chart" height="200"></canvas>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script src="/js/sidebar.js"></script>
+<script src="/js/global.js"></script>
+<script>
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+const years = [2019, 2020, 2021, 2022, 2023, 2024, 2025];
+const incidents = [1240, 1580, 1890, 2210, 1760, 2050, 980];
+const affectedRoads = [892, 1120, 1340, 1560, 1240, 1480, 710];
+const economicLoss = [4200, 6800, 8900, 11200, 7400, 9600, 4100];
+const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const monthlyData = [12, 8, 15, 42, 98, 345, 480, 520, 310, 125, 65, 30];
+
+// Trend chart
+new Chart(document.getElementById('trend-chart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: years,
+    datasets: [
+      { label: 'Incidents', data: incidents, backgroundColor: 'rgba(21,101,192,0.8)', borderRadius: 6, yAxisID: 'y' },
+      { label: 'Roads Affected', data: affectedRoads, type: 'line', borderColor: '#00897B', backgroundColor: 'rgba(0,137,123,0.1)', borderWidth: 2.5, fill: true, tension: 0.4, pointBackgroundColor: '#00897B', yAxisID: 'y2' }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { position:'top' } },
+    scales: {
+      y:  { beginAtZero:true, grid: { color:'rgba(0,0,0,0.05)' }, title: { display:true, text:'Incidents' } },
+      y2: { beginAtZero:true, position:'right', grid: { display:false }, title: { display:true, text:'Roads Affected' } },
+      x:  { grid: { display:false } }
+    }
+  }
+});
+
+// Scatter
+const scatterData = [
+  {x:85,y:420},{x:120,y:680},{x:150,y:890},{x:180,y:1120},{x:95,y:510},{x:200,y:1480},
+  {x:60,y:280},{x:110,y:540},{x:140,y:760},{x:170,y:1020},{x:75,y:380},{x:190,y:1250},
+];
+
+new Chart(document.getElementById('scatter-chart').getContext('2d'), {
+  type: 'scatter',
+  data: {
+    datasets: [{
+      label: 'Rainfall vs Incidents',
+      data: scatterData,
+      backgroundColor: 'rgba(21,101,192,0.65)',
+      pointRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { position:'top' } },
+    scales: {
+      x: { title: { display:true, text:'Rainfall (mm)' }, grid: { color:'rgba(0,0,0,0.05)' } },
+      y: { title: { display:true, text:'Flood Incidents' }, grid: { color:'rgba(0,0,0,0.05)' } }
+    }
+  }
+});
+
+// State chart
+new Chart(document.getElementById('state-chart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: ['Maharashtra','Tamil Nadu','West Bengal','Telangana','Uttar Pradesh','Gujarat','Bihar','Karnataka','Odisha','Kerala'],
+    datasets: [{
+      label: 'Incidents 2024',
+      data: [380, 310, 270, 240, 220, 190, 175, 155, 140, 120],
+      backgroundColor: [
+        'rgba(211,47,47,0.8)','rgba(245,124,0,0.8)','rgba(21,101,192,0.8)',
+        'rgba(0,137,123,0.8)','rgba(249,168,37,0.8)','rgba(21,101,192,0.65)',
+        'rgba(0,137,123,0.6)','rgba(211,47,47,0.6)','rgba(245,124,0,0.6)','rgba(56,142,60,0.8)'
+      ],
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    plugins: { legend: { display:false } },
+    scales: {
+      x: { beginAtZero:true, grid: { color:'rgba(0,0,0,0.05)' } },
+      y: { grid: { display:false } }
+    }
+  }
+});
+
+// Hotspots
+const hotspots = [
+  { location:'Mumbai Coastal Belt', incidents_5yr:342 },
+  { location:'Chennai Urban Core', incidents_5yr:289 },
+  { location:'Kolkata South', incidents_5yr:245 },
+  { location:'Hyderabad Old City', incidents_5yr:198 },
+  { location:'Pune River Corridor', incidents_5yr:176 },
+  { location:'Delhi Low-lying Areas', incidents_5yr:154 },
+  { location:'Ahmedabad Central', incidents_5yr:132 },
+  { location:'Patna Riverside', incidents_5yr:118 },
+];
+
+document.getElementById('hotspots-list').innerHTML = hotspots.map((h, i) => `
+  <div class="hotspot-row">
+    <div class="hotspot-rank ${i<3?'top':'}'}">${i+1}</div>
+    <div class="hotspot-name">${h.location}</div>
+    <div>
+      <div class="hotspot-count">${h.incidents_5yr}</div>
+      <div class="hotspot-label">5-yr incidents</div>
+    </div>
+    <div style="width:80px">
+      <div class="progress-bar"><div class="progress-fill" style="width:${h.incidents_5yr/342*100}%;background:${i===0?'var(--critical)':i<3?'var(--high)':'var(--brand-500)'}"></div></div>
+    </div>
+  </div>
+`).join('');
+
+new Chart(document.getElementById('hotspot-pie').getContext('2d'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Coastal Zones', 'River Corridors', 'Urban Core', 'Low-lying Areas', 'Underpass Areas'],
+    datasets: [{
+      data: [32, 28, 22, 11, 7],
+      backgroundColor: ['#1565C0','#00897B','#D32F2F','#F57C00','#F9A825'],
+      borderWidth: 0, hoverOffset: 6,
+    }]
+  },
+  options: {
+    cutout: '65%',
+    plugins: { legend: { position:'right' } }
+  }
+});
+
+// Monthly chart
+new Chart(document.getElementById('monthly-chart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: months,
+    datasets: [{
+      label: 'Incidents 2024',
+      data: monthlyData,
+      backgroundColor: monthlyData.map(v => v > 300 ? 'rgba(211,47,47,0.8)' : v > 100 ? 'rgba(245,124,0,0.8)' : 'rgba(21,101,192,0.75)'),
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display:false } },
+    scales: {
+      y: { beginAtZero:true, grid: { color:'rgba(0,0,0,0.05)' } },
+      x: { grid: { display:false } }
+    }
+  }
+});
+
+// Hourly chart
+const hours = Array.from({length:24}, (_,i) => `${i.toString().padStart(2,'0')}:00`);
+const hourlyData = [5,3,2,2,3,8,22,45,38,25,20,28,32,30,28,32,55,72,68,55,38,25,15,8];
+
+new Chart(document.getElementById('hourly-chart').getContext('2d'), {
+  type: 'line',
+  data: {
+    labels: hours,
+    datasets: [{
+      label: 'Avg Incidents',
+      data: hourlyData,
+      borderColor: '#1565C0',
+      backgroundColor: 'rgba(21,101,192,0.1)',
+      fill: true,
+      tension: 0.4,
+      borderWidth: 2.5,
+      pointRadius: 0,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display:false } },
+    scales: {
+      y: { beginAtZero:true, grid: { color:'rgba(0,0,0,0.05)' } },
+      x: { grid: { display:false }, ticks: { maxTicksLimit:8 } }
+    }
+  }
+});
+
+// Economic chart
+new Chart(document.getElementById('economic-chart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: years,
+    datasets: [{
+      label: '₹ Crore',
+      data: economicLoss,
+      backgroundColor: years.map((_,i) => i===5?'rgba(211,47,47,0.85)':'rgba(21,101,192,0.75)'),
+      borderRadius: 8,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display:false },
+      tooltip: { callbacks: { label: ctx => ` ₹${ctx.raw.toLocaleString('en-IN')} Cr` } }
+    },
+    scales: {
+      y: { beginAtZero:true, grid: { color:'rgba(0,0,0,0.05)' } },
+      x: { grid: { display:false } }
+    }
+  }
+});
+
+new Chart(document.getElementById('loss-pie').getContext('2d'), {
+  type: 'pie',
+  data: {
+    labels: ['Road Infrastructure', 'Rescue Operations', 'Productivity Loss', 'Agricultural', 'Utility Damage'],
+    datasets: [{
+      data: [38, 22, 20, 12, 8],
+      backgroundColor: ['#1565C0','#D32F2F','#F57C00','#388E3C','#00897B'],
+      borderWidth: 0, hoverOffset: 6,
+    }]
+  },
+  options: {
+    plugins: { legend: { position:'right' } }
+  }
+});
+
+// Response chart
+new Chart(document.getElementById('response-chart').getContext('2d'), {
+  type: 'line',
+  data: {
+    labels: ['2019','2020','2021','2022','2023','2024','2025'],
+    datasets: [{
+      label: 'Avg Response Time (min)',
+      data: [24.5, 22.1, 18.3, 12.6, 10.2, 8.3, 7.1],
+      borderColor: '#388E3C',
+      backgroundColor: 'rgba(56,142,60,0.1)',
+      fill: true,
+      tension: 0.4,
+      borderWidth: 2.5,
+      pointBackgroundColor: '#388E3C',
+      pointRadius: 5,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { position:'top' } },
+    scales: {
+      y: { title: { display:true, text:'Minutes' }, grid: { color:'rgba(0,0,0,0.05)' } },
+      x: { grid: { display:false } }
+    }
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Report Flood – NIRDESH</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌊</text></svg>">
+  <link rel="stylesheet" href="/css/global.css">
+  <style>
+    .report-layout {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: var(--space-8);
+      align-items: start;
+    }
+
+    .report-form-card {
+      background: var(--white);
+      border-radius: var(--radius-xl);
+      padding: var(--space-8);
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border-light);
+    }
+
+    .report-header {
+      text-align: center;
+      margin-bottom: var(--space-8);
+    }
+
+    .report-icon-wrap {
+      width: 72px;
+      height: 72px;
+      background: linear-gradient(135deg, var(--brand-600), var(--teal-600));
+      border-radius: var(--radius-xl);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      margin: 0 auto var(--space-4);
+      box-shadow: 0 8px 32px rgba(21,101,192,0.3);
+    }
+
+    .report-header h2 {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--gray-900);
+      margin-bottom: var(--space-2);
+    }
+
+    .report-header p {
+      font-size: 14px;
+      color: var(--gray-500);
+    }
+
+    /* Severity selector */
+    .severity-selector {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-3);
+      margin-bottom: var(--space-5);
+    }
+
+    .sev-option {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-4);
+      border-radius: var(--radius-md);
+      border: 2px solid var(--gray-200);
+      cursor: pointer;
+      transition: all var(--duration-fast);
+      text-align: center;
+    }
+
+    .sev-option:hover { border-color: var(--brand-300); }
+    .sev-option.selected { border-color: currentColor; }
+
+    .sev-option.critical { color: var(--critical); }
+    .sev-option.critical.selected { background: var(--critical-bg); border-color: var(--critical); }
+    .sev-option.high     { color: var(--high); }
+    .sev-option.high.selected { background: var(--high-bg); border-color: var(--high); }
+    .sev-option.moderate { color: #E65100; }
+    .sev-option.moderate.selected { background: var(--moderate-bg); border-color: var(--moderate); }
+    .sev-option.low      { color: var(--low); }
+    .sev-option.low.selected { background: var(--low-bg); border-color: var(--low); }
+
+    .sev-emoji { font-size: 24px; }
+    .sev-label { font-size: 11px; font-weight: 700; text-transform: uppercase; }
+
+    /* Upload zone */
+    .upload-zone {
+      border: 2px dashed var(--gray-300);
+      border-radius: var(--radius-md);
+      padding: var(--space-6);
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--duration-fast);
+    }
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: var(--brand-400);
+      background: var(--brand-50);
+    }
+
+    .upload-icon { font-size: 32px; margin-bottom: var(--space-2); }
+    .upload-text { font-size: 14px; color: var(--gray-500); }
+    .upload-sub  { font-size: 12px; color: var(--gray-400); margin-top: var(--space-1); }
+
+    /* Location detect */
+    .location-row {
+      display: flex;
+      gap: var(--space-3);
+      align-items: flex-end;
+    }
+    .location-row .form-group { flex: 1; margin-bottom: 0; }
+
+    .detect-btn {
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    /* Progress steps */
+    .steps-indicator {
+      display: flex;
+      justify-content: center;
+      gap: var(--space-2);
+      margin-bottom: var(--space-6);
+    }
+
+    .step-dot {
+      width: 32px;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--gray-200);
+      transition: background var(--duration-fast);
+    }
+
+    .step-dot.active  { background: var(--brand-500); }
+    .step-dot.done    { background: var(--teal-500); }
+
+    /* Right sidebar */
+    .report-sidebar-panel {
+      position: sticky;
+      top: calc(var(--topbar-h) + var(--space-4));
+    }
+
+    .info-box {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: var(--space-5);
+    }
+
+    .info-box-header {
+      padding: var(--space-4) var(--space-5);
+      background: var(--brand-900);
+      color: var(--white);
+    }
+    .info-box-title { font-size: 14px; font-weight: 700; }
+    .info-box-sub   { font-size: 11px; color: var(--brand-200); }
+
+    .info-box-body { padding: var(--space-5); }
+
+    .recent-report {
+      display: flex;
+      gap: var(--space-3);
+      padding: var(--space-3) 0;
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .recent-report:last-child { border-bottom: none; }
+
+    .recent-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 5px;
+    }
+
+    .recent-loc  { font-size: 13px; font-weight: 600; color: var(--gray-900); }
+    .recent-meta { font-size: 11px; color: var(--gray-500); margin-top: 1px; }
+    .recent-votes { font-size: 11px; font-weight: 600; color: var(--brand-600); }
+
+    /* Success state */
+    .success-state {
+      text-align: center;
+      padding: var(--space-10) var(--space-8);
+      display: none;
+    }
+
+    .success-icon {
+      font-size: 64px;
+      margin-bottom: var(--space-4);
+      animation: bounce-in 0.5s var(--ease-out);
+    }
+
+    @keyframes bounce-in {
+      0% { transform: scale(0); }
+      60% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+
+    .success-title { font-size: 24px; font-weight: 800; color: var(--gray-900); margin-bottom: var(--space-3); }
+    .success-desc  { font-size: 15px; color: var(--gray-500); margin-bottom: var(--space-6); }
+
+    @media(max-width: 1024px) {
+      .report-layout { grid-template-columns: 1fr; }
+      .report-sidebar-panel { position: static; }
+    }
+
+    @media(max-width: 600px) {
+      .severity-selector { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <div id="sidebar-placeholder" data-active="/report"></div>
+
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>📢 Report a Flood</h1>
+        <p id="live-clock">—</p>
+      </div>
+      <div class="topbar-actions">
+        <a href="tel:1077" class="btn btn-danger btn-sm">🆘 Emergency 1077</a>
+        <a href="/alerts" class="btn btn-ghost btn-sm">🚨 View Alerts</a>
+      </div>
+    </header>
+
+    <main class="page-body">
+
+      <div class="report-layout">
+
+        <!-- Main form -->
+        <div class="report-form-card">
+
+          <!-- Success state (hidden by default) -->
+          <div class="success-state" id="success-state">
+            <div class="success-icon">✅</div>
+            <div class="success-title">Report Submitted!</div>
+            <div class="success-desc">Your report has been received. Our AI is verifying it now. Expected response time: <strong>~15 minutes</strong>.</div>
+            <div style="display:flex;gap:var(--space-3);justify-content:center;flex-wrap:wrap">
+              <button class="btn btn-primary" onclick="resetForm()">📢 Submit Another</button>
+              <a href="/alerts" class="btn btn-outline">🚨 View All Alerts</a>
+              <a href="/map" class="btn btn-ghost">🗺️ Track on Map</a>
+            </div>
+            <div id="report-id-display" style="margin-top:var(--space-5);font-family:monospace;font-size:12px;color:var(--gray-400)"></div>
+          </div>
+
+          <!-- Form state -->
+          <div id="form-state">
+            <div class="report-header">
+              <div class="report-icon-wrap">📢</div>
+              <h2>Report Waterlogging</h2>
+              <p>Help NIRDESH verify and respond to flood incidents faster. All reports are AI-verified within minutes.</p>
+            </div>
+
+            <div class="steps-indicator">
+              <div class="step-dot done" id="step-1"></div>
+              <div class="step-dot active" id="step-2"></div>
+              <div class="step-dot" id="step-3"></div>
+            </div>
+
+            <form id="report-form" onsubmit="submitReport(event)">
+
+              <!-- Severity -->
+              <div class="form-group">
+                <label class="form-label">🌊 Flood Severity <span style="color:var(--critical)">*</span></label>
+                <div class="severity-selector">
+                  <div class="sev-option critical" onclick="selectSeverity('critical', this)">
+                    <div class="sev-emoji">🚨</div>
+                    <div class="sev-label">Critical</div>
+                  </div>
+                  <div class="sev-option high selected" onclick="selectSeverity('high', this)">
+                    <div class="sev-emoji">⚠️</div>
+                    <div class="sev-label">High</div>
+                  </div>
+                  <div class="sev-option moderate" onclick="selectSeverity('moderate', this)">
+                    <div class="sev-emoji">🌊</div>
+                    <div class="sev-label">Moderate</div>
+                  </div>
+                  <div class="sev-option low" onclick="selectSeverity('low', this)">
+                    <div class="sev-emoji">💧</div>
+                    <div class="sev-label">Low</div>
+                  </div>
+                </div>
+                <input type="hidden" id="severity-input" value="high">
+              </div>
+
+              <!-- Location -->
+              <div class="form-group">
+                <label class="form-label">📍 Location <span style="color:var(--critical)">*</span></label>
+                <div class="location-row">
+                  <div class="form-group">
+                    <input type="text" class="form-input" id="location-input" placeholder="e.g. Karve Road near Deccan, Pune" required>
+                  </div>
+                  <button type="button" class="btn btn-outline btn-sm detect-btn" onclick="detectLocation()">📍 Detect GPS</button>
+                </div>
+                <div style="font-size:11px;color:var(--gray-400);margin-top:var(--space-1)">Be as specific as possible — include road name, landmark, city</div>
+              </div>
+
+              <!-- Coordinates (auto-filled) -->
+              <div class="grid-2" style="gap:var(--space-3)">
+                <div class="form-group">
+                  <label class="form-label">🌐 Latitude</label>
+                  <input type="text" class="form-input" id="lat-input" placeholder="Auto-filled or enter manually">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">🌐 Longitude</label>
+                  <input type="text" class="form-input" id="lng-input" placeholder="Auto-filled or enter manually">
+                </div>
+              </div>
+
+              <!-- Water depth -->
+              <div class="form-group">
+                <label class="form-label">💧 Approximate Water Depth</label>
+                <select class="form-select" id="depth-input">
+                  <option value="">— Select depth —</option>
+                  <option value="0.1">< 10 cm (ankle level)</option>
+                  <option value="0.3">10–30 cm (knee level)</option>
+                  <option value="0.5">30–60 cm (thigh level)</option>
+                  <option value="0.8">60 cm – 1m (dangerous)</option>
+                  <option value="1.2">> 1 m (extremely dangerous)</option>
+                </select>
+              </div>
+
+              <!-- Type of flooding -->
+              <div class="form-group">
+                <label class="form-label">🗂️ Type of Flooding</label>
+                <select class="form-select" id="type-input">
+                  <option value="">— Select type —</option>
+                  <option value="road_waterlogging">Road Waterlogging</option>
+                  <option value="underpass_flood">Underpass Flooding</option>
+                  <option value="drain_overflow">Drain Overflow</option>
+                  <option value="river_overflow">River Bank Overflow</option>
+                  <option value="flash_flood">Flash Flood</option>
+                  <option value="basement">Basement/Property Flooding</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <!-- Description -->
+              <div class="form-group">
+                <label class="form-label">📝 Description</label>
+                <textarea class="form-input" id="description-input" rows="4" placeholder="Describe what you see: water level, vehicles affected, people stranded, duration, etc."></textarea>
+              </div>
+
+              <!-- Photo upload -->
+              <div class="form-group">
+                <label class="form-label">📸 Attach Photo / Video (optional)</label>
+                <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()"
+                     ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="this.classList.remove('drag-over')">
+                  <div class="upload-icon">📷</div>
+                  <div class="upload-text">Click or drag & drop an image</div>
+                  <div class="upload-sub">JPG, PNG, MP4 · Max 10MB · AI will analyze the image</div>
+                </div>
+                <input type="file" id="file-input" accept="image/*,video/*" style="display:none" onchange="handleFileSelect(event)">
+                <div id="file-preview" style="margin-top:var(--space-3)"></div>
+              </div>
+
+              <!-- Contact (optional) -->
+              <div class="form-group">
+                <label class="form-label">📞 Your Phone (optional · for follow-up)</label>
+                <input type="tel" class="form-input" id="phone-input" placeholder="+91 XXXXX XXXXX">
+              </div>
+
+              <!-- Consent -->
+              <div class="form-group">
+                <label style="display:flex;align-items:flex-start;gap:var(--space-3);cursor:pointer">
+                  <input type="checkbox" id="consent-input" required style="margin-top:3px;accent-color:var(--brand-600);width:16px;height:16px;flex-shrink:0">
+                  <span style="font-size:13px;color:var(--gray-600);line-height:1.4">I confirm this report is accurate to the best of my knowledge and consent to NIRDESH sharing it with disaster management authorities.</span>
+                </label>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-full btn-lg" id="submit-btn">
+                📢 Submit Flood Report
+              </button>
+
+              <div style="text-align:center;font-size:12px;color:var(--gray-400);margin-top:var(--space-4)">
+                Reports are AI-verified within ~15 minutes. For immediate emergency: <a href="tel:1077" style="color:var(--critical);font-weight:700">Call 1077</a>
+              </div>
+
+            </form>
+          </div>
+
+        </div>
+
+        <!-- Right sidebar -->
+        <div class="report-sidebar-panel">
+
+          <!-- How it works -->
+          <div class="info-box">
+            <div class="info-box-header">
+              <div class="info-box-title">🔄 How Reports Are Used</div>
+              <div class="info-box-sub">Your data helps save lives</div>
+            </div>
+            <div class="info-box-body">
+              <div style="display:flex;flex-direction:column;gap:var(--space-4)">
+                ${[
+                  { n:1, t:'AI Verification', d:'Our computer vision model cross-checks your report with CCTV and sensor data within minutes.' },
+                  { n:2, t:'Alert Broadcasting', d:'Verified reports trigger alerts to nearby users, NDRF, and traffic management systems.' },
+                  { n:3, t:'Model Training', d:'Confirmed reports improve our AI prediction accuracy for future flood events.' },
+                  { n:4, t:'Authority Dispatch', d:'Critical reports are automatically escalated to district disaster management cells.' },
+                ].map(item => `
+                  <div style="display:flex;gap:var(--space-3);align-items:flex-start">
+                    <div style="width:24px;height:24px;background:var(--brand-100);color:var(--brand-700);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0">${item.n}</div>
+                    <div>
+                      <div style="font-size:13px;font-weight:700;color:var(--gray-900)">${item.t}</div>
+                      <div style="font-size:12px;color:var(--gray-500);margin-top:2px;line-height:1.4">${item.d}</div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent reports -->
+          <div class="info-box">
+            <div class="info-box-header">
+              <div class="info-box-title">📊 Recent Community Reports</div>
+              <div class="info-box-sub">847 reports today · 72% verified</div>
+            </div>
+            <div class="info-box-body" id="recent-reports-list">
+              <div style="text-align:center;padding:20px"><div class="spinner" style="margin:0 auto"></div></div>
+            </div>
+          </div>
+
+          <!-- Impact stats -->
+          <div style="background:var(--brand-900);border-radius:var(--radius-lg);padding:var(--space-5);color:var(--white)">
+            <div style="font-size:13px;color:var(--brand-200);margin-bottom:var(--space-4)">🌟 Community Impact</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
+              ${[
+                { v:'2.4L+', l:'Reports Total' },
+                { v:'72%',   l:'Verified Rate' },
+                { v:'8.3min',l:'Avg Response' },
+                { v:'312',   l:'Districts Covered' },
+              ].map(s => `
+                <div>
+                  <div style="font-size:22px;font-weight:900;color:#64B5F6">${s.v}</div>
+                  <div style="font-size:11px;color:rgba(255,255,255,0.6)">${s.l}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script src="/js/sidebar.js"></script>
+<script src="/js/global.js"></script>
+<script>
+let selectedSeverity = 'high';
+
+function selectSeverity(sev, el) {
+  document.querySelectorAll('.sev-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedSeverity = sev;
+  document.getElementById('severity-input').value = sev;
+}
+
+function detectLocation() {
+  if (!navigator.geolocation) {
+    window.NIRDESH.showToast({ title:'GPS not supported', type:'info' });
+    return;
+  }
+  const btn = document.querySelector('.detect-btn');
+  btn.textContent = '📍 Detecting…';
+  btn.disabled = true;
+
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      document.getElementById('lat-input').value = pos.coords.latitude.toFixed(6);
+      document.getElementById('lng-input').value = pos.coords.longitude.toFixed(6);
+      btn.textContent = '✅ GPS Located';
+      btn.disabled = false;
+      window.NIRDESH.showToast({ title:'Location detected!', message:`${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`, type:'success' });
+    },
+    err => {
+      btn.textContent = '📍 Detect GPS';
+      btn.disabled = false;
+      window.NIRDESH.showToast({ title:'GPS unavailable', message:'Please enter location manually', type:'info' });
+    }
+  );
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.add('drag-over');
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) showFilePreview(file);
+}
+
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) showFilePreview(file);
+}
+
+function showFilePreview(file) {
+  const preview = document.getElementById('file-preview');
+  if (file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      preview.innerHTML = `
+        <div style="position:relative;display:inline-block">
+          <img src="${e.target.result}" alt="preview" style="width:100%;max-height:200px;object-fit:cover;border-radius:var(--radius-md)">
+          <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.5);color:white;border-radius:4px;padding:2px 8px;font-size:11px">AI Analysis Pending</div>
+          <button onclick="clearFile()" style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.5);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer">✕</button>
+        </div>
+        <div style="font-size:12px;color:var(--gray-500);margin-top:4px">📸 ${file.name} · ${(file.size/1024).toFixed(0)} KB</div>
+      `;
+    };
+    reader.readAsDataURL(file);
+  } else {
+    preview.innerHTML = `<div style="font-size:12px;color:var(--gray-500)">📎 ${file.name} attached</div>`;
+  }
+}
+
+function clearFile() {
+  document.getElementById('file-preview').innerHTML = '';
+  document.getElementById('file-input').value = '';
+}
+
+async function submitReport(e) {
+  e.preventDefault();
+  const btn = document.getElementById('submit-btn');
+  btn.textContent = '⏳ Submitting…';
+  btn.disabled = true;
+
+  const data = {
+    severity: selectedSeverity,
+    location: document.getElementById('location-input').value,
+    lat: parseFloat(document.getElementById('lat-input').value) || null,
+    lng: parseFloat(document.getElementById('lng-input').value) || null,
+    depth: document.getElementById('depth-input').value,
+    type: document.getElementById('type-input').value,
+    description: document.getElementById('description-input').value,
+  };
+
+  const result = await window.NIRDESH.postAPI('/api/reports', data);
+
+  document.getElementById('form-state').style.display = 'none';
+  document.getElementById('success-state').style.display = 'block';
+
+  if (result?.report_id) {
+    document.getElementById('report-id-display').textContent = `Report ID: ${result.report_id}`;
+  }
+}
+
+function resetForm() {
+  document.getElementById('form-state').style.display = 'block';
+  document.getElementById('success-state').style.display = 'none';
+  document.getElementById('report-form').reset();
+  selectedSeverity = 'high';
+  document.querySelectorAll('.sev-option').forEach(o => o.classList.remove('selected'));
+  document.querySelector('.sev-option.high').classList.add('selected');
+  document.getElementById('file-preview').innerHTML = '';
+  document.getElementById('submit-btn').textContent = '📢 Submit Flood Report';
+  document.getElementById('submit-btn').disabled = false;
+}
+
+// Load recent reports
+async function loadRecentReports() {
+  const data = await window.NIRDESH.fetchAPI('/api/reports');
+  if (!data) return;
+
+  document.getElementById('recent-reports-list').innerHTML = data.recent.map(r => {
+    const timeAgo = new Date(r.timestamp).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
+    return `
+      <div class="recent-report">
+        <div class="recent-dot" style="background:${r.verified?'var(--low)':'var(--moderate)'}"></div>
+        <div style="flex:1">
+          <div class="recent-loc">${r.location}</div>
+          <div class="recent-meta">${r.description.substring(0,60)}…</div>
+          <div style="display:flex;justify-content:space-between;margin-top:4px">
+            <span style="font-size:11px;color:var(--gray-400)">${timeAgo}</span>
+            <span class="recent-votes">👍 ${r.votes} upvotes · ${r.verified ? '✅ Verified' : '⏳ Pending'}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+loadRecentReports();
+</script>
+</body>
+</html>

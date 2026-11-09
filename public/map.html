@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Flood Map – NIRDESH</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌊</text></svg>">
+  <link rel="stylesheet" href="/css/global.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <style>
+    .map-page-wrapper {
+      display: flex;
+      height: calc(100vh - var(--topbar-h));
+      margin-top: var(--topbar-h);
+    }
+
+    #map {
+      flex: 1;
+      z-index: 1;
+    }
+
+    .map-sidebar {
+      width: 360px;
+      flex-shrink: 0;
+      background: var(--white);
+      border-left: 1px solid var(--border-light);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 2;
+    }
+
+    .map-sidebar-header {
+      padding: var(--space-5) var(--space-6);
+      border-bottom: 1px solid var(--gray-100);
+      flex-shrink: 0;
+    }
+
+    .map-sidebar-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: var(--space-4) var(--space-5);
+    }
+
+    .map-filter-row {
+      display: flex;
+      gap: var(--space-2);
+      flex-wrap: wrap;
+      margin-top: var(--space-3);
+    }
+
+    .filter-chip {
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1.5px solid;
+      transition: all var(--duration-fast);
+    }
+
+    .filter-chip.active-chip { opacity: 1; }
+    .filter-chip { opacity: 0.6; }
+    .filter-chip:hover { opacity: 0.85; }
+
+    .filter-chip.critical { background: var(--critical-bg); border-color: var(--critical); color: var(--critical); }
+    .filter-chip.high     { background: var(--high-bg);     border-color: var(--high);     color: var(--high);     }
+    .filter-chip.moderate { background: var(--moderate-bg); border-color: var(--moderate); color: #E65100;         }
+    .filter-chip.low      { background: var(--low-bg);      border-color: var(--low);      color: var(--low);      }
+    .filter-chip.all      { background: var(--info-bg);     border-color: var(--info);     color: var(--info);     opacity:1; }
+
+    .incident-card {
+      background: var(--gray-50);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+      margin-bottom: var(--space-3);
+      cursor: pointer;
+      transition: all var(--duration-fast);
+    }
+
+    .incident-card:hover {
+      background: var(--white);
+      box-shadow: var(--shadow-md);
+      border-color: var(--brand-200);
+    }
+
+    .incident-card.selected {
+      background: var(--brand-50);
+      border-color: var(--brand-400);
+      box-shadow: 0 0 0 2px rgba(21,101,192,0.1);
+    }
+
+    .incident-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: var(--space-2);
+    }
+
+    .incident-location {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--gray-900);
+      flex: 1;
+      margin-right: var(--space-2);
+    }
+
+    .incident-details {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      font-size: 12px;
+      color: var(--gray-500);
+    }
+
+    .incident-detail {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .detail-value {
+      font-weight: 600;
+      color: var(--gray-700);
+    }
+
+    .map-legend {
+      position: absolute;
+      bottom: 32px;
+      left: 12px;
+      z-index: 999;
+      background: var(--white);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border-light);
+      min-width: 160px;
+    }
+
+    .legend-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--gray-500);
+      margin-bottom: var(--space-3);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      margin-bottom: var(--space-2);
+      font-size: 12px;
+      color: var(--gray-700);
+    }
+
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Leaflet popup custom */
+    .leaflet-popup-content-wrapper {
+      border-radius: var(--radius-md) !important;
+      box-shadow: var(--shadow-lg) !important;
+      border: 1px solid var(--border-light) !important;
+    }
+
+    .custom-popup h3 { font-size: 14px; font-weight: 700; margin-bottom: 6px; color: var(--gray-900); }
+    .custom-popup p  { font-size: 12px; color: var(--gray-600); margin: 2px 0; }
+    .custom-popup .popup-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+    .popup-badge.critical { background: var(--critical-bg); color: var(--critical); }
+    .popup-badge.high     { background: var(--high-bg);     color: var(--high);     }
+    .popup-badge.moderate { background: var(--moderate-bg); color: #E65100;         }
+    .popup-badge.low      { background: var(--low-bg);      color: var(--low);      }
+
+    @media (max-width: 900px) {
+      .map-sidebar { display: none; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <div id="sidebar-placeholder" data-active="/map"></div>
+
+  <div class="main-content" style="margin-top:0;overflow:hidden">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>🗺️ Live Flood Map</h1>
+        <p id="live-clock">—</p>
+      </div>
+      <div class="topbar-actions">
+        <div class="live-pill"><div class="live-dot"></div> Live Tracking</div>
+        <button class="btn btn-ghost btn-sm" id="recenter-btn">📍 Recenter India</button>
+        <a href="/alerts" class="btn btn-primary btn-sm">🚨 Alerts</a>
+      </div>
+    </header>
+
+    <div class="map-page-wrapper">
+      <div id="map"></div>
+
+      <div class="map-sidebar">
+        <div class="map-sidebar-header">
+          <div style="font-size:15px;font-weight:700;color:var(--gray-900)">🚨 Flood Incidents</div>
+          <div style="font-size:12px;color:var(--gray-500);margin-top:2px" id="incident-count">Loading...</div>
+          <div class="map-filter-row">
+            <div class="filter-chip all active-chip" onclick="filterIncidents('all',this)">All</div>
+            <div class="filter-chip critical" onclick="filterIncidents('critical',this)">Critical</div>
+            <div class="filter-chip high" onclick="filterIncidents('high',this)">High</div>
+            <div class="filter-chip moderate" onclick="filterIncidents('moderate',this)">Moderate</div>
+            <div class="filter-chip low" onclick="filterIncidents('low',this)">Low</div>
+          </div>
+        </div>
+        <div class="map-sidebar-body" id="incidents-list">
+          <div style="text-align:center;padding:40px 20px">
+            <div class="spinner" style="margin:0 auto 12px"></div>
+            <div style="font-size:13px;color:var(--gray-500)">Loading incidents…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Map legend -->
+<div class="map-legend">
+  <div class="legend-title">Flood Severity</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#D32F2F"></div> Critical (>0.7m)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#F57C00"></div> High (0.4–0.7m)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#F9A825"></div> Moderate (0.2–0.4m)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#388E3C"></div> Low (<0.2m)</div>
+</div>
+
+<script src="/js/sidebar.js"></script>
+<script src="/js/global.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ── Map initialization ────────────────────────────────────────────────────────
+const map = L.map('map', {
+  center: [20.5937, 78.9629],
+  zoom: 5,
+  zoomControl: true,
+}).setView([20.5937, 78.9629], 5);
+
+// Tile layer – CartoDB Positron (clean, calm style)
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+  attribution: '© OpenStreetMap © CARTO | NIRDESH AI Platform',
+  subdomains: 'abcd',
+  maxZoom: 19
+}).addTo(map);
+
+document.getElementById('recenter-btn').addEventListener('click', () => {
+  map.flyTo([20.5937, 78.9629], 5, { duration: 1 });
+});
+
+// Extended mock incidents (India-wide)
+const allIncidents = [
+  { id:1,  lat:19.0760, lng:72.8777, severity:'critical', location:'Mumbai - LBS Marg, Kurla', depth:0.8, source:'AI Camera', risk:'Road Closed', city:'Mumbai' },
+  { id:2,  lat:18.5204, lng:73.8567, severity:'high',     location:'Pune - Karve Road',         depth:0.5, source:'Sensor',    risk:'Avoid',      city:'Pune' },
+  { id:3,  lat:13.0827, lng:80.2707, severity:'critical', location:'Chennai - Anna Salai',      depth:0.95,source:'AI Camera', risk:'Road Closed', city:'Chennai' },
+  { id:4,  lat:22.5726, lng:88.3639, severity:'moderate', location:'Kolkata - Park Street',     depth:0.3, source:'Citizen',   risk:'Caution',    city:'Kolkata' },
+  { id:5,  lat:17.3850, lng:78.4867, severity:'high',     location:'Hyderabad - Secunderabad',  depth:0.55,source:'Sensor',    risk:'Avoid',      city:'Hyderabad' },
+  { id:6,  lat:12.9716, lng:77.5946, severity:'low',      location:'Bengaluru - Sarjapur Rd',   depth:0.15,source:'Rainfall',  risk:'Monitor',    city:'Bengaluru' },
+  { id:7,  lat:19.9975, lng:73.7898, severity:'moderate', location:'Nashik - College Road',     depth:0.3, source:'Citizen',   risk:'Caution',    city:'Nashik' },
+  { id:8,  lat:21.1458, lng:79.0882, severity:'low',      location:'Nagpur - Wardha Road',      depth:0.1, source:'Model',     risk:'Normal',     city:'Nagpur' },
+  { id:9,  lat:23.0225, lng:72.5714, severity:'high',     location:'Ahmedabad - SG Highway',    depth:0.6, source:'AI Camera', risk:'Avoid',      city:'Ahmedabad' },
+  { id:10, lat:26.8467, lng:80.9462, severity:'critical', location:'Lucknow - Hazratganj',      depth:0.85,source:'Sensor',    risk:'Road Closed', city:'Lucknow' },
+  { id:11, lat:28.7041, lng:77.1025, severity:'moderate', location:'Delhi - Minto Road Underpass',depth:0.35,source:'AI Camera',risk:'Caution',   city:'Delhi' },
+  { id:12, lat:25.5941, lng:85.1376, severity:'high',     location:'Patna - Gandhi Maidan',     depth:0.7, source:'Sensor',    risk:'Avoid',      city:'Patna' },
+  { id:13, lat:11.0168, lng:76.9558, severity:'moderate', location:'Coimbatore - Gandhipuram',  depth:0.25,source:'Citizen',   risk:'Caution',    city:'Coimbatore' },
+  { id:14, lat:15.2993, lng:74.1240, severity:'low',      location:'Goa - Panaji NH-66',        depth:0.12,source:'Model',     risk:'Monitor',    city:'Goa' },
+];
+
+const severityColors = { critical:'#D32F2F', high:'#F57C00', moderate:'#F9A825', low:'#388E3C' };
+const markers = {};
+
+function createMarker(incident) {
+  const color = severityColors[incident.severity] || '#1565C0';
+  const size = incident.severity === 'critical' ? 18 : incident.severity === 'high' ? 15 : 12;
+
+  const icon = L.divIcon({
+    className: '',
+    html: `
+      <div style="
+        width:${size}px;height:${size}px;
+        background:${color};
+        border-radius:50%;
+        border:2.5px solid white;
+        box-shadow:0 2px 8px rgba(0,0,0,0.3)${incident.severity==='critical'?',0 0 0 4px rgba(211,47,47,0.2)':''}
+      "></div>
+    `,
+    iconSize: [size, size],
+    iconAnchor: [size/2, size/2],
+  });
+
+  const marker = L.marker([incident.lat, incident.lng], { icon })
+    .addTo(map)
+    .bindPopup(`
+      <div class="custom-popup">
+        <h3>${incident.location}</h3>
+        <p>💧 Flood depth: <strong>${incident.depth}m</strong></p>
+        <p>📡 Source: ${incident.source}</p>
+        <p>⚠️ Risk: <strong>${incident.risk}</strong></p>
+        <p>🏙️ City: ${incident.city}</p>
+        <div class="popup-badge ${incident.severity}">${incident.severity.toUpperCase()}</div>
+      </div>
+    `, { maxWidth: 220 });
+
+  marker.on('click', () => {
+    highlightIncidentCard(incident.id);
+  });
+
+  return marker;
+}
+
+// Render all markers
+allIncidents.forEach(inc => {
+  markers[inc.id] = createMarker(inc);
+});
+
+// ── Sidebar incident list ─────────────────────────────────────────────────────
+let currentFilter = 'all';
+
+function renderIncidents(filter) {
+  currentFilter = filter;
+  const filtered = filter === 'all' ? allIncidents : allIncidents.filter(i => i.severity === filter);
+  document.getElementById('incident-count').textContent = `${filtered.length} incident${filtered.length !== 1 ? 's' : ''} shown · Click to locate`;
+
+  const list = document.getElementById('incidents-list');
+  list.innerHTML = filtered.map(inc => `
+    <div class="incident-card" id="inc-card-${inc.id}" onclick="focusIncident(${inc.id})">
+      <div class="incident-header">
+        <div class="incident-location">${inc.location}</div>
+        <span class="badge ${inc.severity}">${inc.severity}</span>
+      </div>
+      <div class="incident-details">
+        <div class="incident-detail">💧 <span class="detail-value">${inc.depth}m</span></div>
+        <div class="incident-detail">📡 <span class="detail-value">${inc.source}</span></div>
+        <div class="incident-detail">⚠️ <span class="detail-value">${inc.risk}</span></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterIncidents(severity, chipEl) {
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active-chip'));
+  chipEl.classList.add('active-chip');
+  renderIncidents(severity);
+
+  // Show/hide markers
+  allIncidents.forEach(inc => {
+    const m = markers[inc.id];
+    if (!m) return;
+    if (severity === 'all' || inc.severity === severity) {
+      if (!map.hasLayer(m)) m.addTo(map);
+    } else {
+      if (map.hasLayer(m)) map.removeLayer(m);
+    }
+  });
+}
+
+function focusIncident(id) {
+  const inc = allIncidents.find(i => i.id === id);
+  if (!inc) return;
+  map.flyTo([inc.lat, inc.lng], 13, { duration: 1 });
+  markers[id]?.openPopup();
+  highlightIncidentCard(id);
+}
+
+function highlightIncidentCard(id) {
+  document.querySelectorAll('.incident-card').forEach(c => c.classList.remove('selected'));
+  const card = document.getElementById(`inc-card-${id}`);
+  if (card) {
+    card.classList.add('selected');
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+renderIncidents('all');
+</script>
+</body>
+</html>

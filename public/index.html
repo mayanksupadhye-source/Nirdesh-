@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NIRDESH – AI Road Flood Intelligence Dashboard</title>
+  <meta name="description" content="Real-time AI-powered flood intelligence for India's roads. Monitor, predict, and respond to waterlogging with NIRDESH.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌊</text></svg>">
+  <link rel="stylesheet" href="/css/global.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    /* ── Dashboard-specific styles ── */
+    .hero-banner {
+      background: linear-gradient(135deg, var(--brand-900) 0%, #0D3B7A 50%, var(--teal-700) 100%);
+      border-radius: var(--radius-xl);
+      padding: var(--space-8);
+      color: var(--white);
+      position: relative;
+      overflow: hidden;
+      margin-bottom: var(--space-8);
+      box-shadow: var(--shadow-xl);
+    }
+
+    .hero-banner::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(circle at 15% 50%, rgba(30,136,229,0.3) 0%, transparent 40%),
+        radial-gradient(circle at 85% 20%, rgba(0,137,123,0.25) 0%, transparent 35%),
+        url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 30 Q15 20 30 30 Q45 40 60 30' fill='none' stroke='rgba(255,255,255,0.03)' stroke-width='2'/%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+
+    .hero-content { position: relative; z-index: 1; }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 4px 14px;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: var(--space-4);
+      color: var(--brand-200);
+    }
+
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: 32px;
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.5px;
+      margin-bottom: var(--space-3);
+    }
+
+    .hero-title .highlight {
+      background: linear-gradient(90deg, #64B5F6, #80DEEA);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-desc {
+      font-size: 15px;
+      color: rgba(255,255,255,0.75);
+      max-width: 560px;
+      line-height: 1.6;
+      margin-bottom: var(--space-6);
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+    }
+
+    .hero-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: 11px 22px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all var(--duration-fast);
+    }
+
+    .hero-btn-primary {
+      background: var(--white);
+      color: var(--brand-800);
+      box-shadow: var(--shadow-md);
+    }
+    .hero-btn-primary:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+
+    .hero-btn-outline {
+      background: rgba(255,255,255,0.12);
+      color: var(--white);
+      border: 1.5px solid rgba(255,255,255,0.3);
+    }
+    .hero-btn-outline:hover { background: rgba(255,255,255,0.2); }
+
+    .hero-floats {
+      position: absolute;
+      right: var(--space-8);
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+      z-index: 1;
+    }
+
+    .hero-float-card {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: var(--radius-md);
+      padding: var(--space-3) var(--space-4);
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .hero-float-icon { font-size: 22px; }
+
+    .hero-float-info {}
+    .hero-float-value { font-size: 20px; font-weight: 800; color: var(--white); line-height: 1; }
+    .hero-float-label { font-size: 11px; color: rgba(255,255,255,0.65); }
+
+    @media(max-width: 900px) {
+      .hero-floats { display: none; }
+      .hero-title { font-size: 24px; }
+    }
+
+    /* ── Live map minimap ── */
+    .mini-map {
+      width: 100%;
+      height: 300px;
+      background: linear-gradient(145deg, #E8F4FD 0%, #B3D9F7 50%, #7BC4F0 100%);
+      border-radius: var(--radius-lg);
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .mini-map::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(30,136,229,0.08) 39px, rgba(30,136,229,0.08) 40px),
+        repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(30,136,229,0.08) 39px, rgba(30,136,229,0.08) 40px);
+    }
+
+    .map-pin {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      transform: translate(-50%, -100%);
+      transition: transform var(--duration-fast);
+    }
+
+    .map-pin:hover { transform: translate(-50%, -100%) scale(1.2); }
+
+    .pin-bubble {
+      width: 32px;
+      height: 32px;
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-md);
+      border: 2px solid var(--white);
+    }
+
+    .pin-bubble.critical { background: var(--critical); }
+    .pin-bubble.high     { background: var(--high); }
+    .pin-bubble.moderate { background: var(--moderate); }
+    .pin-bubble.low      { background: var(--low); }
+
+    .pin-label {
+      background: var(--white);
+      border-radius: var(--radius-sm);
+      padding: 2px 8px;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--gray-800);
+      white-space: nowrap;
+      box-shadow: var(--shadow-xs);
+      margin-top: 4px;
+    }
+
+    .map-overlay-btn {
+      position: absolute;
+      bottom: var(--space-4);
+      right: var(--space-4);
+      background: var(--brand-700);
+      color: var(--white);
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: var(--shadow-md);
+      transition: background var(--duration-fast);
+    }
+    .map-overlay-btn:hover { background: var(--brand-800); }
+
+    /* India map SVG label */
+    .map-india-label {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 80px;
+      opacity: 0.05;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    /* ── Weather strip ── */
+    .weather-strip {
+      display: flex;
+      gap: var(--space-4);
+      overflow-x: auto;
+      padding-bottom: var(--space-2);
+      scrollbar-width: none;
+    }
+    .weather-strip::-webkit-scrollbar { display: none; }
+
+    .weather-card {
+      background: var(--white);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+      border: 1px solid var(--border-light);
+      min-width: 160px;
+      flex-shrink: 0;
+      transition: all var(--duration-fast);
+      cursor: default;
+    }
+    .weather-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+
+    .weather-city { font-size: 13px; font-weight: 700; color: var(--gray-800); }
+    .weather-rain { font-size: 22px; font-weight: 800; color: var(--brand-700); line-height: 1; margin: var(--space-2) 0; }
+    .weather-label { font-size: 11px; color: var(--gray-500); }
+    .weather-risk { font-size: 11px; font-weight: 700; margin-top: var(--space-2); }
+    .weather-risk.critical { color: var(--critical); }
+    .weather-risk.high { color: var(--high); }
+    .weather-risk.moderate { color: #E65100; }
+    .weather-risk.low { color: var(--low); }
+
+    /* ── Drain status ── */
+    .drain-donut { position: relative; width: 120px; height: 120px; margin: 0 auto; }
+
+    /* ── Source data items ── */
+    .source-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3) 0;
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .source-item:last-child { border-bottom: none; }
+
+    .source-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .source-dot.active { background: var(--low); animation: pulse-green 2s infinite; }
+
+    .source-name { flex: 1; font-size: 13px; font-weight: 500; color: var(--gray-800); }
+    .source-time { font-size: 11px; color: var(--gray-500); }
+  </style>
+</head>
+<body>
+
+<div class="app-wrapper">
+  <!-- Sidebar -->
+  <div id="sidebar-placeholder" data-active="/"></div>
+
+  <div class="main-content">
+    <!-- Topbar -->
+    <header class="topbar">
+      <button id="menu-toggle" class="topbar-btn" style="display:none" aria-label="Menu">☰</button>
+      <div class="topbar-title">
+        <h1>Command Dashboard</h1>
+        <p id="live-clock">—</p>
+      </div>
+      <div class="topbar-actions">
+        <div class="live-pill"><div class="live-dot"></div> Live</div>
+        <a href="/report" class="btn btn-teal btn-sm">📢 Report Flood</a>
+        <a href="tel:1077" class="btn btn-danger btn-sm topbar-btn emergency">🆘 Emergency 1077</a>
+      </div>
+    </header>
+
+    <main class="page-body">
+
+      <!-- Hero Banner -->
+      <div class="hero-banner">
+        <div class="hero-content">
+          <div class="hero-eyebrow">🌊 AI-Powered Platform · India</div>
+          <h1 class="hero-title">
+            Real-time <span class="highlight">Flood Intelligence</span><br>for India's Roads
+          </h1>
+          <p class="hero-desc">
+            NIRDESH combines satellite imagery, computer vision, drainage sensors, and citizen reports
+            to detect waterlogging, predict risk zones, and enable rapid emergency response across 312 districts.
+          </p>
+          <div class="hero-actions">
+            <a href="/map" class="hero-btn hero-btn-primary">🗺️ View Live Map</a>
+            <a href="/alerts" class="hero-btn hero-btn-outline">🚨 Active Alerts (47)</a>
+            <a href="/ai-insights" class="hero-btn hero-btn-outline">🤖 AI Insights</a>
+          </div>
+        </div>
+        <div class="hero-floats">
+          <div class="hero-float-card">
+            <div class="hero-float-icon">📡</div>
+            <div class="hero-float-info">
+              <div class="hero-float-value">94.2%</div>
+              <div class="hero-float-label">AI Accuracy</div>
+            </div>
+          </div>
+          <div class="hero-float-card">
+            <div class="hero-float-icon">🏙️</div>
+            <div class="hero-float-info">
+              <div class="hero-float-value">312</div>
+              <div class="hero-float-label">Districts Covered</div>
+            </div>
+          </div>
+          <div class="hero-float-card">
+            <div class="hero-float-icon">⚡</div>
+            <div class="hero-float-info">
+              <div class="hero-float-value">8.3 min</div>
+              <div class="hero-float-label">Avg Response</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats grid -->
+      <div class="stats-grid" id="stats-grid">
+        <!-- Loaded by JS -->
+        <div class="stat-card info">
+          <div class="stat-icon-wrapper blue">🚨</div>
+          <div class="stat-value" data-counter="47">47</div>
+          <div class="stat-label">Active Alerts</div>
+          <div class="stat-trend up">▲ +12 from yesterday</div>
+        </div>
+        <div class="stat-card high">
+          <div class="stat-icon-wrapper orange">🛣️</div>
+          <div class="stat-value" data-counter="128">128</div>
+          <div class="stat-label">Roads Affected</div>
+          <div class="stat-trend up">▲ +23 this hour</div>
+        </div>
+        <div class="stat-card critical">
+          <div class="stat-icon-wrapper red">👥</div>
+          <div class="stat-value" data-counter="24300">24,300</div>
+          <div class="stat-label">Citizens at Risk</div>
+          <div class="stat-trend up">▲ Est. from GHSL data</div>
+        </div>
+        <div class="stat-card good">
+          <div class="stat-icon-wrapper green">✅</div>
+          <div class="stat-value" data-counter="15">15</div>
+          <div class="stat-label">Resolved Today</div>
+          <div class="stat-trend down">▼ Avg 8.3 min response</div>
+        </div>
+        <div class="stat-card teal">
+          <div class="stat-icon-wrapper teal">📸</div>
+          <div class="stat-value" data-counter="1847">1,847</div>
+          <div class="stat-label">Cameras Online</div>
+          <div class="stat-trend neutral">→ 97% uptime</div>
+        </div>
+        <div class="stat-card info">
+          <div class="stat-icon-wrapper blue">🌧️</div>
+          <div class="stat-value" data-counter="423">423</div>
+          <div class="stat-label">Rain Gauges Active</div>
+          <div class="stat-trend neutral">→ IMD Network</div>
+        </div>
+        <div class="stat-card good">
+          <div class="stat-icon-wrapper green">🛡️</div>
+          <div class="stat-value" data-counter="18">18</div>
+          <div class="stat-label">NDRF Teams Deployed</div>
+          <div class="stat-trend neutral">→ 6 States</div>
+        </div>
+        <div class="stat-card info">
+          <div class="stat-icon-wrapper yellow">📞</div>
+          <div class="stat-value" data-counter="3421">3,421</div>
+          <div class="stat-label">Helpline Calls Today</div>
+          <div class="stat-trend up">▲ 12% above avg</div>
+        </div>
+      </div>
+
+      <!-- Main content grid -->
+      <div class="grid-2 mb-8">
+
+        <!-- Mini map -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">🗺️ Live Flood Map</div>
+              <div class="card-subtitle">Real-time incidents across India</div>
+            </div>
+            <a href="/map" class="card-action">Open Full Map →</a>
+          </div>
+          <div class="card-body" style="padding:0">
+            <div class="mini-map" id="mini-map" onclick="window.location='/map'">
+              <div class="map-india-label">🇮🇳</div>
+              <!-- Pins injected by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Active alerts -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">🚨 Active Alerts</div>
+              <div class="card-subtitle">Sorted by severity · auto-refreshes every 60s</div>
+            </div>
+            <a href="/alerts" class="card-action">View All →</a>
+          </div>
+          <div class="card-body">
+            <div class="alert-list" id="alert-list">
+              <div style="text-align:center;padding:20px"><div class="spinner" style="margin:0 auto"></div></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Second row -->
+      <div class="grid-2 mb-8">
+
+        <!-- Rainfall chart -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">🌧️ Rainfall vs Flood Risk</div>
+              <div class="card-subtitle">Major cities · today's data · mm</div>
+            </div>
+            <a href="/analytics" class="card-action">Analytics →</a>
+          </div>
+          <div class="card-body">
+            <canvas id="rainfall-chart" height="220"></canvas>
+          </div>
+        </div>
+
+        <!-- AI predictions -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">🤖 AI Flood Forecast</div>
+              <div class="card-subtitle">Next 6 hours · confidence-weighted</div>
+            </div>
+            <a href="/ai-insights" class="card-action">Full Insights →</a>
+          </div>
+          <div class="card-body">
+            <div id="ai-predictions-list">
+              <div style="text-align:center;padding:20px"><div class="spinner" style="margin:0 auto"></div></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Third row -->
+      <div class="grid-2 mb-8">
+
+        <!-- Weather strip -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">🌤️ Weather by Region</div>
+              <div class="card-subtitle">Live rainfall · IMD data feed</div>
+            </div>
+          </div>
+          <div class="card-body" style="padding-bottom:var(--space-4)">
+            <div class="weather-strip" id="weather-strip">
+              <div style="text-align:center;padding:20px;width:100%"><div class="spinner" style="margin:0 auto"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Data sources -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">📡 Data Sources</div>
+              <div class="card-subtitle">Live pipeline status</div>
+            </div>
+            <span class="badge info">6 Active</span>
+          </div>
+          <div class="card-body">
+            <div id="data-sources-list">
+              <div style="text-align:center;padding:20px"><div class="spinner" style="margin:0 auto"></div></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Bottom row: drain status + historical chart -->
+      <div class="grid-2">
+
+        <!-- Drain status donut -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">🚰 Drainage Network Status</div>
+              <div class="card-subtitle">8,420 drains monitored nationwide</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div style="display:flex;gap:var(--space-6);align-items:center;flex-wrap:wrap">
+              <div style="width:140px;height:140px;flex-shrink:0">
+                <canvas id="drain-chart"></canvas>
+              </div>
+              <div id="drain-legend" style="flex:1"></div>
+            </div>
+            <div id="critical-drains" style="margin-top:var(--space-5)"></div>
+          </div>
+        </div>
+
+        <!-- Historical trend -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">📈 Historical Flood Incidents</div>
+              <div class="card-subtitle">2019–2025 · National trend</div>
+            </div>
+            <a href="/analytics" class="card-action">More →</a>
+          </div>
+          <div class="card-body">
+            <canvas id="historical-chart" height="200"></canvas>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script src="/js/sidebar.js"></script>
+<script src="/js/global.js"></script>
+<script>
+// ── Dashboard Page Logic ──────────────────────────────────────────────────────
+
+// Animate counter elements on load
+document.querySelectorAll('[data-counter]').forEach(el => {
+  const v = parseFloat(el.dataset.counter.replace(/,/g,''));
+  el.textContent = '0';
+  setTimeout(() => window.NIRDESH?.animateCounter(el, v, 1200), 400);
+});
+
+// Map pins
+const pins = [
+  { lat: 72, lng: 36, severity: 'critical', label: 'Mumbai' },
+  { lat: 56, lng: 42, severity: 'high',     label: 'Pune' },
+  { lat: 18, lng: 60, severity: 'critical', label: 'Chennai' },
+  { lat: 28, lng: 28, severity: 'moderate', label: 'Kolkata' },
+  { lat: 42, lng: 48, severity: 'high',     label: 'Hyderabad' },
+  { lat: 48, lng: 38, severity: 'low',      label: 'Bengaluru' },
+];
+
+const mapEl = document.getElementById('mini-map');
+pins.forEach(p => {
+  const pin = document.createElement('div');
+  pin.className = 'map-pin';
+  pin.style.left = p.lat + '%';
+  pin.style.top  = p.lng + '%';
+  pin.innerHTML = `
+    <div class="pin-bubble ${p.severity}"></div>
+    <div class="pin-label">${p.label}</div>
+  `;
+  mapEl.appendChild(pin);
+});
+
+// Open map button
+const mapBtn = document.createElement('button');
+mapBtn.className = 'map-overlay-btn';
+mapBtn.textContent = '🗺️ Open Full Map';
+mapBtn.onclick = (e) => { e.stopPropagation(); window.location='/map'; };
+mapEl.appendChild(mapBtn);
+
+// Active Alerts
+async function loadAlerts() {
+  const data = await window.NIRDESH.fetchAPI('/api/alerts');
+  if (!data) return;
+  const list = document.getElementById('alert-list');
+  list.innerHTML = data.alerts.slice(0, 4).map(a => `
+    <div class="alert-row ${a.severity}">
+      <div class="alert-indicator ${a.severity}"></div>
+      <div class="alert-info">
+        <div class="alert-location">${a.location}</div>
+        <div class="alert-meta">
+          <span>💧 ${a.flood_depth}m depth</span>
+          <span>📡 ${a.source}</span>
+          <span class="alert-depth">${a.risk}</span>
+        </div>
+      </div>
+      <span class="badge ${a.severity}">${a.severity.toUpperCase()}</span>
+    </div>
+  `).join('');
+}
+
+// Weather
+async function loadWeather() {
+  const data = await window.NIRDESH.fetchAPI('/api/weather');
+  if (!data) return;
+  const strip = document.getElementById('weather-strip');
+  strip.innerHTML = data.regions.map(r => `
+    <div class="weather-card">
+      <div class="weather-city">${r.name}</div>
+      <div class="weather-rain">${r.rainfall_mm}mm</div>
+      <div class="weather-label">🌧️ Today · ${r.humidity}% humidity</div>
+      <div class="weather-risk ${r.flood_risk.toLowerCase()}">${r.flood_risk === 'Critical' ? '🔴' : r.flood_risk === 'High' ? '🟠' : r.flood_risk === 'Moderate' ? '🟡' : '🟢'} ${r.flood_risk} Risk</div>
+    </div>
+  `).join('');
+
+  // Rainfall chart
+  const ctx = document.getElementById('rainfall-chart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: data.regions.map(r => r.name),
+      datasets: [
+        {
+          label: 'Today (mm)',
+          data: data.regions.map(r => r.rainfall_mm),
+          backgroundColor: 'rgba(21,101,192,0.75)',
+          borderRadius: 6,
+        },
+        {
+          label: 'Forecast (mm)',
+          data: data.regions.map(r => r.rainfall_forecast_mm),
+          backgroundColor: 'rgba(0,137,123,0.5)',
+          borderRadius: 6,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'top' } },
+      scales: {
+        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+}
+
+// AI Predictions
+async function loadAIPredictions() {
+  const data = await window.NIRDESH.fetchAPI('/api/ai-insights');
+  if (!data) return;
+  const list = document.getElementById('ai-predictions-list');
+  list.innerHTML = data.prediction_next_6h.map(p => {
+    const colorMap = { Critical: 'critical', High: 'high', Moderate: 'moderate', Low: 'low' };
+    const cls = colorMap[p.risk_level] || 'info';
+    return `
+      <div style="display:flex;align-items:center;gap:var(--space-4);padding:var(--space-3) 0;border-bottom:1px solid var(--gray-100);">
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:14px;color:var(--gray-900)">${p.region}</div>
+          <div style="font-size:12px;color:var(--gray-500);margin-top:2px">Expected depth: ${p.expected_depth_cm}cm</div>
+        </div>
+        <div style="text-align:right">
+          <span class="badge ${cls}">${p.risk_level}</span>
+          <div style="font-size:11px;color:var(--gray-500);margin-top:4px">${p.confidence}% confidence</div>
+        </div>
+      </div>
+    `;
+  }).join('') + `
+    <div style="margin-top:var(--space-4);padding:var(--space-4);background:var(--brand-50);border-radius:var(--radius-md);border:1px solid var(--border-subtle)">
+      <div style="font-size:13px;font-weight:700;color:var(--brand-800);margin-bottom:var(--space-2)">Model Performance</div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-2)">
+        <div style="font-size:12px;color:var(--gray-600)">Accuracy: <strong>${data.model_performance.accuracy}%</strong></div>
+        <div style="font-size:12px;color:var(--gray-600)">Recall: <strong>${data.model_performance.recall}%</strong></div>
+        <div style="font-size:12px;color:var(--gray-600)">F1-Score: <strong>${data.model_performance.f1_score}%</strong></div>
+        <div style="font-size:12px;color:var(--gray-600)">FP Rate: <strong>${data.model_performance.false_positives_rate}%</strong></div>
+      </div>
+    </div>
+  `;
+
+  // Data sources
+  const sourcesList = document.getElementById('data-sources-list');
+  sourcesList.innerHTML = data.data_sources.map(s => `
+    <div class="source-item">
+      <div class="source-dot ${s.status}"></div>
+      <div class="source-name">${s.name}</div>
+      <div class="source-time">${s.last_update}</div>
+    </div>
+  `).join('');
+}
+
+// Drain chart
+async function loadDrains() {
+  const data = await window.NIRDESH.fetchAPI('/api/drains');
+  if (!data) return;
+
+  const ctx = document.getElementById('drain-chart').getContext('2d');
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Clear', 'Partial Block', 'Blocked'],
+      datasets: [{
+        data: [data.clear, data.partially_blocked, data.blocked],
+        backgroundColor: ['#388E3C', '#F9A825', '#D32F2F'],
+        borderWidth: 0,
+        hoverOffset: 4,
+      }]
+    },
+    options: {
+      cutout: '70%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.label}: ${ctx.raw.toLocaleString('en-IN')}`
+          }
+        }
+      }
+    }
+  });
+
+  document.getElementById('drain-legend').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:var(--space-2)">
+      ${[
+        { label: 'Clear', val: data.clear, color: '#388E3C' },
+        { label: 'Partial Block', val: data.partially_blocked, color: '#F9A825' },
+        { label: 'Blocked', val: data.blocked, color: '#D32F2F' },
+      ].map(item => `
+        <div style="display:flex;align-items:center;gap:var(--space-2)">
+          <div style="width:12px;height:12px;border-radius:50%;background:${item.color};flex-shrink:0"></div>
+          <div style="font-size:13px;flex:1;color:var(--gray-700)">${item.label}</div>
+          <div style="font-size:14px;font-weight:700;color:var(--gray-900)">${item.val.toLocaleString('en-IN')}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  document.getElementById('critical-drains').innerHTML = `
+    <div style="font-size:13px;font-weight:700;color:var(--gray-700);margin-bottom:var(--space-3)">⚠️ Critical Drains</div>
+    ${data.critical_drains.map(d => `
+      <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-3)">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:var(--gray-900)">${d.location}</div>
+          <div style="margin-top:4px">
+            <div class="progress-bar" style="height:6px">
+              <div class="progress-fill" style="width:${Math.min(d.capacity_pct, 100)}%;background:${d.capacity_pct >= 100 ? 'var(--critical)' : d.capacity_pct >= 80 ? 'var(--high)' : 'var(--moderate)'}"></div>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:13px;font-weight:800;color:${d.capacity_pct >= 100 ? 'var(--critical)' : d.capacity_pct >= 80 ? 'var(--high)' : 'var(--moderate)'}">${d.capacity_pct}%</div>
+      </div>
+    `).join('')}
+  `;
+}
+
+// Historical chart
+async function loadHistorical() {
+  const data = await window.NIRDESH.fetchAPI('/api/historical');
+  if (!data) return;
+
+  const ctx = document.getElementById('historical-chart').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.yearly.map(d => d.year),
+      datasets: [
+        {
+          label: 'Incidents',
+          data: data.yearly.map(d => d.incidents),
+          borderColor: '#1565C0',
+          backgroundColor: 'rgba(21,101,192,0.1)',
+          borderWidth: 2.5,
+          fill: true,
+          tension: 0.4,
+          pointBackgroundColor: '#1565C0',
+          pointRadius: 4,
+        },
+        {
+          label: 'Roads Affected',
+          data: data.yearly.map(d => d.affected_roads),
+          borderColor: '#00897B',
+          backgroundColor: 'rgba(0,137,123,0.08)',
+          borderWidth: 2.5,
+          fill: false,
+          tension: 0.4,
+          pointBackgroundColor: '#00897B',
+          pointRadius: 4,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'top' } },
+      scales: {
+        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+}
+
+// Load all data
+loadAlerts();
+loadWeather();
+loadAIPredictions();
+loadDrains();
+loadHistorical();
+
+// Auto-refresh alerts every 60s
+setInterval(loadAlerts, 60000);
+</script>
+</body>
+</html>

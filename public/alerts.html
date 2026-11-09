@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Active Alerts – NIRDESH</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌊</text></svg>">
+  <link rel="stylesheet" href="/css/global.css">
+  <style>
+    .alerts-toolbar {
+      display: flex;
+      gap: var(--space-3);
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: var(--space-6);
+      padding: var(--space-4) var(--space-5);
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-light);
+    }
+
+    .alerts-search {
+      flex: 1;
+      min-width: 200px;
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      background: var(--gray-50);
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-sm);
+      padding: 8px 14px;
+      transition: border-color var(--duration-fast);
+    }
+
+    .alerts-search:focus-within { border-color: var(--brand-400); }
+
+    .alerts-search input {
+      background: none;
+      border: none;
+      outline: none;
+      font-size: 14px;
+      color: var(--gray-800);
+      flex: 1;
+    }
+
+    .severity-filter {
+      display: flex;
+      gap: var(--space-2);
+    }
+
+    .sev-btn {
+      padding: 7px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      border: 1.5px solid;
+      cursor: pointer;
+      background: transparent;
+      transition: all var(--duration-fast);
+    }
+
+    .sev-btn.active { opacity: 1; }
+    .sev-btn { opacity: 0.55; }
+    .sev-btn:hover { opacity: 0.85; }
+
+    .sev-btn.all      { border-color: var(--brand-400); color: var(--brand-600); }
+    .sev-btn.all.active { background: var(--brand-100); opacity: 1; }
+    .sev-btn.critical { border-color: var(--critical); color: var(--critical); }
+    .sev-btn.critical.active { background: var(--critical-bg); opacity: 1; }
+    .sev-btn.high     { border-color: var(--high); color: var(--high); }
+    .sev-btn.high.active { background: var(--high-bg); opacity: 1; }
+    .sev-btn.moderate { border-color: var(--moderate); color: #E65100; }
+    .sev-btn.moderate.active { background: var(--moderate-bg); opacity: 1; }
+    .sev-btn.low      { border-color: var(--low); color: var(--low); }
+    .sev-btn.low.active { background: var(--low-bg); opacity: 1; }
+
+    /* Alert card full */
+    .alert-card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light);
+      padding: var(--space-5) var(--space-6);
+      margin-bottom: var(--space-4);
+      display: flex;
+      gap: var(--space-5);
+      align-items: flex-start;
+      transition: all var(--duration-fast);
+      cursor: pointer;
+      box-shadow: var(--shadow-xs);
+    }
+
+    .alert-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+
+    .alert-card.critical { border-left: 4px solid var(--critical); }
+    .alert-card.high     { border-left: 4px solid var(--high); }
+    .alert-card.moderate { border-left: 4px solid var(--moderate); }
+    .alert-card.low      { border-left: 4px solid var(--low); }
+
+    .alert-card-left {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-2);
+      flex-shrink: 0;
+      min-width: 72px;
+    }
+
+    .alert-sev-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+
+    .alert-sev-icon.critical { background: var(--critical-bg); }
+    .alert-sev-icon.high     { background: var(--high-bg);     }
+    .alert-sev-icon.moderate { background: var(--moderate-bg); }
+    .alert-sev-icon.low      { background: var(--low-bg);      }
+
+    .alert-sev-label {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .alert-sev-label.critical { color: var(--critical); }
+    .alert-sev-label.high     { color: var(--high); }
+    .alert-sev-label.moderate { color: #E65100; }
+    .alert-sev-label.low      { color: var(--low); }
+
+    .alert-card-body { flex: 1; }
+
+    .alert-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--gray-900);
+      margin-bottom: var(--space-2);
+    }
+
+    .alert-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin-bottom: var(--space-3);
+    }
+
+    .alert-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: var(--gray-600);
+      background: var(--gray-100);
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      font-weight: 500;
+    }
+
+    .alert-card-actions {
+      display: flex;
+      gap: var(--space-2);
+      flex-wrap: wrap;
+      margin-top: var(--space-3);
+    }
+
+    .alert-depth-bar {
+      margin-top: var(--space-3);
+    }
+
+    .depth-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--gray-500);
+      margin-bottom: 4px;
+    }
+
+    .alert-time {
+      font-size: 11px;
+      color: var(--gray-400);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .alert-pulse {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--critical);
+      animation: pulse-critical 1.5s ease-in-out infinite;
+    }
+
+    /* Stats strip */
+    .alert-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-4);
+      margin-bottom: var(--space-6);
+    }
+
+    .alert-stat-item {
+      background: var(--white);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      border: 1px solid var(--border-light);
+      text-align: center;
+      box-shadow: var(--shadow-xs);
+    }
+
+    .alert-stat-num {
+      font-size: 28px;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: var(--space-1);
+    }
+
+    .alert-stat-label {
+      font-size: 12px;
+      color: var(--gray-500);
+      font-weight: 500;
+    }
+
+    @media(max-width: 768px) {
+      .alert-stats { grid-template-columns: repeat(2, 1fr); }
+      .alert-card { flex-direction: column; }
+      .alert-card-left { flex-direction: row; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <div id="sidebar-placeholder" data-active="/alerts"></div>
+
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>🚨 Active Alerts</h1>
+        <p id="live-clock">—</p>
+      </div>
+      <div class="topbar-actions">
+        <div class="live-pill"><div class="live-dot"></div> Live</div>
+        <button class="btn btn-ghost btn-sm" id="refresh-btn">🔄 Refresh</button>
+        <a href="/report" class="btn btn-teal btn-sm">📢 Report</a>
+      </div>
+    </header>
+
+    <main class="page-body">
+
+      <!-- Alert counts strip -->
+      <div class="alert-stats" id="alert-stats">
+        <div class="alert-stat-item">
+          <div class="alert-stat-num" style="color:var(--critical)">12</div>
+          <div class="alert-stat-label">🔴 Critical</div>
+        </div>
+        <div class="alert-stat-item">
+          <div class="alert-stat-num" style="color:var(--high)">19</div>
+          <div class="alert-stat-label">🟠 High</div>
+        </div>
+        <div class="alert-stat-item">
+          <div class="alert-stat-num" style="color:var(--moderate)">11</div>
+          <div class="alert-stat-label">🟡 Moderate</div>
+        </div>
+        <div class="alert-stat-item">
+          <div class="alert-stat-num" style="color:var(--low)">5</div>
+          <div class="alert-stat-label">🟢 Low</div>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="alerts-toolbar">
+        <div class="alerts-search">
+          <span>🔍</span>
+          <input type="text" id="search-input" placeholder="Search by location, source…" oninput="filterAlerts()">
+        </div>
+        <div class="severity-filter">
+          <button class="sev-btn all active" onclick="setSeverity('all', this)">All</button>
+          <button class="sev-btn critical" onclick="setSeverity('critical', this)">Critical</button>
+          <button class="sev-btn high" onclick="setSeverity('high', this)">High</button>
+          <button class="sev-btn moderate" onclick="setSeverity('moderate', this)">Moderate</button>
+          <button class="sev-btn low" onclick="setSeverity('low', this)">Low</button>
+        </div>
+        <div style="font-size:12px;color:var(--gray-500)" id="result-count"></div>
+      </div>
+
+      <!-- Alert list -->
+      <div id="alerts-container">
+        <div style="text-align:center;padding:60px 20px">
+          <div class="spinner" style="margin:0 auto 16px"></div>
+          <div style="font-size:14px;color:var(--gray-500)">Loading active alerts…</div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script src="/js/sidebar.js"></script>
+<script src="/js/global.js"></script>
+<script>
+const extendedAlerts = [
+  { id:1,  severity:'critical', location:'Mumbai - LBS Marg, Kurla',           city:'Mumbai',    state:'Maharashtra', flood_depth:0.80, source:'AI-Camera',     risk:'Road Closed',    lat:19.0760, lng:72.8777, since:'43 min ago', desc:'CCTV detected significant waterlogging. 3 vehicles stranded. NDRF team en-route.' },
+  { id:2,  severity:'critical', location:'Chennai - Anna Salai',                city:'Chennai',   state:'Tamil Nadu',  flood_depth:0.95, source:'AI-Camera+Sensor', risk:'Road Closed', lat:13.0827, lng:80.2707, since:'28 min ago', desc:'Flash flood from Cooum river overflow. Street level exceeded safe limit.' },
+  { id:3,  severity:'critical', location:'Lucknow - Hazratganj Chauraha',      city:'Lucknow',   state:'Uttar Pradesh', flood_depth:0.85, source:'Sensor Grid', risk:'Evacuate Area',  lat:26.8467, lng:80.9462, since:'1h 12 min ago', desc:'Drainage failure coupled with heavy rainfall. 2 localities affected.' },
+  { id:4,  severity:'critical', location:'Ahmedabad - SG Highway Underpass',   city:'Ahmedabad', state:'Gujarat',     flood_depth:0.72, source:'AI-Camera',     risk:'Road Closed',    lat:23.0225, lng:72.5714, since:'52 min ago', desc:'Underpass completely flooded. Emergency pumps deployed.' },
+  { id:5,  severity:'high',     location:'Pune - Karve Road Near Deccan',      city:'Pune',      state:'Maharashtra', flood_depth:0.55, source:'Citizen+AI',    risk:'Avoid Travel',   lat:18.5204, lng:73.8567, since:'1h 5 min ago', desc:'Mid-road waterlogging 55cm depth. Slow traffic reported.' },
+  { id:6,  severity:'high',     location:'Hyderabad - Secunderabad Station Rd',city:'Hyderabad', state:'Telangana',   flood_depth:0.60, source:'Sensor',        risk:'Avoid Travel',   lat:17.4399, lng:78.4983, since:'38 min ago', desc:'Low-lying road flooding confirmed by IoT sensor grid.' },
+  { id:7,  severity:'high',     location:'Patna - Gandhi Maidan Underpass',    city:'Patna',     state:'Bihar',       flood_depth:0.68, source:'AI-Camera',     risk:'Avoid Travel',   lat:25.5941, lng:85.1376, since:'2h 20 min ago', desc:'Persistent flooding. Drainage capacity overwhelmed.' },
+  { id:8,  severity:'high',     location:'Delhi - Minto Road Underpass',       city:'Delhi',     state:'Delhi',       flood_depth:0.42, source:'AI-Camera',     risk:'Caution',        lat:28.6407, lng:77.2270, since:'1h 44 min ago', desc:'Moderate depth, deteriorating. SDMC team on-site.' },
+  { id:9,  severity:'moderate', location:'Nashik - College Road Near Circle',  city:'Nashik',    state:'Maharashtra', flood_depth:0.30, source:'Citizen Report', risk:'Caution',        lat:19.9975, lng:73.7898, since:'3h 10 min ago', desc:'Ankle-deep water reported by residents. Drain blockage suspected.' },
+  { id:10, severity:'moderate', location:'Kolkata - Park Street Area',         city:'Kolkata',   state:'W. Bengal',   flood_depth:0.28, source:'Sensor',        risk:'Caution',        lat:22.5519, lng:88.3537, since:'2h 50 min ago', desc:'Intermittent flooding after 85mm rainfall in 2 hours.' },
+  { id:11, severity:'moderate', location:'Coimbatore - Gandhipuram Bus Stand', city:'Coimbatore',state:'Tamil Nadu',  flood_depth:0.25, source:'AI-Camera',     risk:'Caution',        lat:11.0168, lng:76.9558, since:'4h ago', desc:'Water sheet flow across road. Passable with care.' },
+  { id:12, severity:'low',      location:'Nagpur - Wardha Road NH-7',          city:'Nagpur',    state:'Maharashtra', flood_depth:0.12, source:'Rainfall Model', risk:'Monitor',        lat:21.1458, lng:79.0882, since:'5h ago', desc:'Forecasted light flooding based on IMD rainfall data. Monitoring.' },
+  { id:13, severity:'low',      location:'Bengaluru - Sarjapur Road',          city:'Bengaluru', state:'Karnataka',   flood_depth:0.14, source:'Rainfall Model', risk:'Monitor',        lat:12.9120, lng:77.6845, since:'6h ago', desc:'Low risk currently. Drainage system adequate.' },
+  { id:14, severity:'low',      location:'Goa - NH-66 Panaji Stretch',         city:'Panaji',    state:'Goa',         flood_depth:0.10, source:'Model',         risk:'Normal',         lat:15.4909, lng:73.8278, since:'7h ago', desc:'Precautionary alert. No standing water confirmed yet.' },
+];
+
+let currentSeverity = 'all';
+let currentSearch = '';
+
+function setSeverity(sev, btn) {
+  currentSeverity = sev;
+  document.querySelectorAll('.sev-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderAlerts();
+}
+
+function filterAlerts() {
+  currentSearch = document.getElementById('search-input').value.toLowerCase();
+  renderAlerts();
+}
+
+function renderAlerts() {
+  let filtered = allAlerts;
+  if (currentSeverity !== 'all') filtered = filtered.filter(a => a.severity === currentSeverity);
+  if (currentSearch) filtered = filtered.filter(a =>
+    a.location.toLowerCase().includes(currentSearch) ||
+    a.source.toLowerCase().includes(currentSearch) ||
+    a.city.toLowerCase().includes(currentSearch) ||
+    a.state.toLowerCase().includes(currentSearch)
+  );
+
+  document.getElementById('result-count').textContent = `${filtered.length} alert${filtered.length !== 1 ? 's' : ''} shown`;
+
+  const sevIcons = { critical:'🚨', high:'⚠️', moderate:'🌊', low:'💧' };
+
+  document.getElementById('alerts-container').innerHTML = filtered.length === 0
+    ? `<div style="text-align:center;padding:60px;color:var(--gray-500)">No alerts match your filter.</div>`
+    : filtered.map(a => `
+      <div class="alert-card ${a.severity}">
+        <div class="alert-card-left">
+          <div class="alert-sev-icon ${a.severity}">${sevIcons[a.severity]}</div>
+          <div class="alert-sev-label ${a.severity}">${a.severity}</div>
+        </div>
+        <div class="alert-card-body">
+          <div class="alert-title">${a.location}</div>
+          <div class="alert-tags">
+            <div class="alert-tag">🏙️ ${a.city}, ${a.state}</div>
+            <div class="alert-tag">📡 ${a.source}</div>
+            <div class="alert-tag">⏱️ ${a.since}</div>
+            <div class="alert-tag">⚠️ ${a.risk}</div>
+          </div>
+          <div style="font-size:13px;color:var(--gray-600);line-height:1.5">${a.desc}</div>
+          <div class="alert-depth-bar">
+            <div class="depth-label">
+              <span>Flood depth</span>
+              <span style="font-weight:700;color:${a.severity==='critical'?'var(--critical)':a.severity==='high'?'var(--high)':'var(--gray-700)'}">${a.flood_depth}m</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width:${Math.min(a.flood_depth/1.2*100,100)}%;background:${a.severity==='critical'?'var(--critical)':a.severity==='high'?'var(--high)':a.severity==='moderate'?'var(--moderate)':'var(--low)'}"></div>
+            </div>
+          </div>
+          <div class="alert-card-actions">
+            <a href="/map" class="btn btn-outline btn-sm">🗺️ View on Map</a>
+            <button class="btn btn-ghost btn-sm" onclick="shareAlert(${a.id})">📤 Share</button>
+            ${a.severity === 'critical' ? `<a href="tel:1077" class="btn btn-danger btn-sm">🆘 Emergency</a>` : ''}
+          </div>
+        </div>
+        <div class="alert-time">
+          ${a.severity === 'critical' ? '<div class="alert-pulse" style="margin:0 auto 4px"></div>' : ''}
+          ${a.since}
+        </div>
+      </div>
+    `).join('');
+}
+
+const allAlerts = extendedAlerts;
+renderAlerts();
+
+function shareAlert(id) {
+  const a = allAlerts.find(x => x.id === id);
+  if (!a) return;
+  if (navigator.share) {
+    navigator.share({ title: 'NIRDESH Flood Alert', text: `⚠️ ${a.severity.toUpperCase()}: Flooding on ${a.location} — depth ${a.flood_depth}m. Avoid travel.` });
+  } else {
+    navigator.clipboard?.writeText(`⚠️ NIRDESH Alert: Flooding on ${a.location} — depth ${a.flood_depth}m. Avoid travel.`);
+    window.NIRDESH?.showToast({ title: 'Copied to clipboard!', type: 'success' });
+  }
+}
+
+document.getElementById('refresh-btn').addEventListener('click', () => {
+  window.NIRDESH?.showToast({ title: '🔄 Alerts refreshed', message: '47 active alerts — data as of now', type: 'info' });
+});
+</script>
+</body>
+</html>

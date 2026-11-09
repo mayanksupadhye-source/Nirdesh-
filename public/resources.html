@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emergency Resources – NIRDESH</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌊</text></svg>">
+  <link rel="stylesheet" href="/css/global.css">
+  <style>
+    .emergency-banner {
+      background: linear-gradient(135deg, #B71C1C, #D32F2F);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6) var(--space-8);
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-8);
+      box-shadow: 0 8px 32px rgba(211,47,47,0.3);
+      flex-wrap: wrap;
+      gap: var(--space-4);
+    }
+
+    .emergency-banner-left h2 {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: var(--space-1);
+    }
+
+    .emergency-banner-left p {
+      font-size: 14px;
+      color: rgba(255,255,255,0.8);
+    }
+
+    .emergency-numbers {
+      display: flex;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+    }
+
+    .helpline-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: rgba(255,255,255,0.15);
+      border: 1.5px solid rgba(255,255,255,0.3);
+      border-radius: var(--radius-md);
+      padding: var(--space-3) var(--space-5);
+      color: var(--white);
+      text-decoration: none;
+      transition: background var(--duration-fast);
+      cursor: pointer;
+    }
+    .helpline-btn:hover { background: rgba(255,255,255,0.25); }
+    .helpline-num { font-size: 20px; font-weight: 900; }
+    .helpline-name { font-size: 11px; opacity: 0.8; }
+
+    /* NDRF card */
+    .ndrf-card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5) var(--space-6);
+      border: 1px solid var(--border-light);
+      box-shadow: var(--shadow-sm);
+      transition: all var(--duration-fast);
+    }
+    .ndrf-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+
+    .ndrf-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-4);
+    }
+
+    .ndrf-team-id {
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      background: var(--brand-100);
+      color: var(--brand-800);
+      padding: 2px 10px;
+      border-radius: var(--radius-full);
+    }
+
+    .ndrf-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .ndrf-status.deployed { color: var(--critical); }
+    .ndrf-status.standby  { color: var(--moderate); }
+
+    .ndrf-city { font-size: 18px; font-weight: 800; color: var(--gray-900); margin-bottom: var(--space-3); }
+
+    .ndrf-stats {
+      display: flex;
+      gap: var(--space-4);
+    }
+
+    .ndrf-stat {
+      text-align: center;
+      flex: 1;
+      background: var(--gray-50);
+      padding: var(--space-3);
+      border-radius: var(--radius-sm);
+    }
+    .ndrf-stat-val { font-size: 24px; font-weight: 800; color: var(--brand-700); line-height: 1; }
+    .ndrf-stat-label { font-size: 11px; color: var(--gray-500); margin-top: 2px; }
+
+    /* Shelter card */
+    .shelter-card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      transition: all var(--duration-fast);
+    }
+    .shelter-card:hover { box-shadow: var(--shadow-md); }
+
+    .shelter-header {
+      padding: var(--space-5) var(--space-6);
+      border-bottom: 1px solid var(--gray-100);
+    }
+
+    .shelter-name { font-size: 15px; font-weight: 700; color: var(--gray-900); }
+    .shelter-city { font-size: 13px; color: var(--gray-500); }
+
+    .shelter-body { padding: var(--space-5) var(--space-6); }
+
+    .shelter-capacity-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-3);
+    }
+
+    .shelter-pct {
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    .shelter-pct.full  { color: var(--critical); }
+    .shelter-pct.high  { color: var(--high); }
+    .shelter-pct.ok    { color: var(--low); }
+
+    /* Useful contacts table */
+    .contact-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-4) 0;
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .contact-row:last-child { border-bottom: none; }
+
+    .contact-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .contact-name { flex: 1; font-size: 14px; font-weight: 600; color: var(--gray-900); }
+    .contact-desc { font-size: 12px; color: var(--gray-500); margin-top: 1px; }
+    .contact-num  { font-size: 18px; font-weight: 900; color: var(--brand-700); }
+
+    .safe-tips-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: var(--space-4);
+      margin-top: var(--space-4);
+    }
+
+    .tip-card {
+      background: var(--white);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      border: 1px solid var(--border-light);
+      display: flex;
+      gap: var(--space-3);
+      align-items: flex-start;
+    }
+
+    .tip-icon { font-size: 24px; flex-shrink: 0; }
+    .tip-title { font-size: 14px; font-weight: 700; color: var(--gray-900); margin-bottom: var(--space-1); }
+    .tip-desc  { font-size: 12px; color: var(--gray-600); line-height: 1.5; }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <div id="sidebar-placeholder" data-active="/resources"></div>
+
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>🛟 Emergency Resources</h1>
+        <p id="live-clock">—</p>
+      </div>
+      <div class="topbar-actions">
+        <a href="tel:1077" class="btn btn-danger btn-sm">🆘 Emergency 1077</a>
+        <a href="/report" class="btn btn-teal btn-sm">📢 Report Flood</a>
+      </div>
+    </header>
+
+    <main class="page-body">
+
+      <!-- Emergency banner -->
+      <div class="emergency-banner">
+        <div class="emergency-banner-left">
+          <h2>🆘 Emergency Helplines · 24/7</h2>
+          <p>Call immediately if you are in a flood zone. All numbers are toll-free.</p>
+        </div>
+        <div class="emergency-numbers">
+          <a href="tel:1077" class="helpline-btn">
+            <div class="helpline-num">1077</div>
+            <div class="helpline-name">Flood Emergency</div>
+          </a>
+          <a href="tel:011-24363260" class="helpline-btn">
+            <div class="helpline-num">011-24363260</div>
+            <div class="helpline-name">NDRF Helpline</div>
+          </a>
+          <a href="tel:1800-180-1253" class="helpline-btn">
+            <div class="helpline-num">1800-180-1253</div>
+            <div class="helpline-name">NDMA (Toll-Free)</div>
+          </a>
+          <a href="tel:1070" class="helpline-btn">
+            <div class="helpline-num">1070</div>
+            <div class="helpline-name">State Disaster</div>
+          </a>
+          <a href="tel:112" class="helpline-btn">
+            <div class="helpline-num">112</div>
+            <div class="helpline-name">National Emergency</div>
+          </a>
+        </div>
+      </div>
+
+      <!-- NDRF Teams -->
+      <div class="section-header mb-4">
+        <div>
+          <div class="section-title">🛡️ NDRF Teams</div>
+          <div class="section-subtitle">National Disaster Response Force · 18 teams deployed</div>
+        </div>
+        <span class="badge critical">3 Deployed · 1 Standby</span>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--space-5);margin-bottom:var(--space-8)">
+        <div class="ndrf-card">
+          <div class="ndrf-header">
+            <div class="ndrf-team-id">NDRF-7</div>
+            <div class="ndrf-status deployed">🔴 Deployed</div>
+          </div>
+          <div class="ndrf-city">Mumbai, Maharashtra</div>
+          <div class="ndrf-stats">
+            <div class="ndrf-stat"><div class="ndrf-stat-val">45</div><div class="ndrf-stat-label">Personnel</div></div>
+            <div class="ndrf-stat"><div class="ndrf-stat-val">8</div><div class="ndrf-stat-label">Rescue Boats</div></div>
+            <div class="ndrf-stat"><div class="ndrf-stat-val">3</div><div class="ndrf-stat-label">Ambulances</div></div>
+          </div>
+          <div style="margin-top:var(--space-3)"><a href="tel:011-24363260" class="btn btn-danger btn-sm btn-full">📞 Contact NDRF-7</a></div>
+        </div>
+
+        <div class="ndrf-card">
+          <div class="ndrf-header">
+            <div class="ndrf-team-id">NDRF-12</div>
+            <div class="ndrf-status standby">🟡 On Standby</div>
+          </div>
+          <div class="ndrf-city">Chennai, Tamil Nadu</div>
+          <div class="ndrf-stats">
+            <div class="ndrf-stat"><div class="ndrf-stat-val">45</div><div class="ndrf-stat-label">Personnel</div></div>
+            <div class="ndrf-stat"><div class="ndrf-stat-val">6</div><div class="ndrf-stat-label">Rescue Boats</div></div>
+            <div class="ndrf-stat"><div class="ndrf-stat-val">2</div><div class="ndrf-stat-label">Ambulances</div></div>
+          </div>
+          <div style="margin-top:var(--space-3)"><a href="tel:011-24363260" class="btn btn-outline btn-sm btn-full">📞 Contact NDRF-12</a></div>
+        </div>
+
+        <div class="ndrf-card">
+          <div class="ndrf-header">
+            <div class="ndrf-team-id">NDRF-3</div>
+            <div class="ndrf-status deployed">🔴 Deployed</div>
+          </div>
+          <div class="ndrf-city">Kolkata, West Bengal</div>
+          <div class="ndrf-stats">
+            <div class="ndrf-stat"><div class="ndrf-stat-val">45</div><div class="ndrf-stat-label">Personnel</div></div>
+            <div class="ndrf-stat"><div class="ndrf-stat-val">10</div><div class="ndrf-stat-label">Rescue Boats</div></div>
+            <div class="ndrf-stat"><div class="ndrf-stat-val">3</div><div class="ndrf-stat-label">Ambulances</div></div>
+          </div>
+          <div style="margin-top:var(--space-3)"><a href="tel:011-24363260" class="btn btn-danger btn-sm btn-full">📞 Contact NDRF-3</a></div>
+        </div>
+
+        <div class="ndrf-card">
+          <div class="ndrf-header">
+            <div class="ndrf-team-id">NDRF-9</div>
+            <div class="ndrf-status deployed">🔴 Deployed</div>
+          </div>
+          <div class="ndrf-city">Lucknow, Uttar Pradesh</div>
+          <div class="ndrf-stats">
+            <div class="ndrf-stat"><div class="ndrf-stat-val">45</div><div class="ndrf-stat-label">Personnel</div></div>
+            <div class="ndrf-stat"><div class="ndrf-stat-val">7</div><div class="ndrf-stat-label">Rescue Boats</div></div>
+            <div class="ndrf-stat"><div class="ndrf-stat-val">2</div><div class="ndrf-stat-label">Ambulances</div></div>
+          </div>
+          <div style="margin-top:var(--space-3)"><a href="tel:011-24363260" class="btn btn-danger btn-sm btn-full">📞 Contact NDRF-9</a></div>
+        </div>
+      </div>
+
+      <!-- Relief Shelters -->
+      <div class="section-header mb-4">
+        <div>
+          <div class="section-title">🏠 Relief Shelters</div>
+          <div class="section-subtitle">Government-designated flood relief centers · current occupancy</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:var(--space-5);margin-bottom:var(--space-8)">
+        ${[
+          { name:'Bandra Community Center', city:'Mumbai, Maharashtra', cap:500, occ:312 },
+          { name:'Rajarajan School Campus', city:'Chennai, Tamil Nadu', cap:800, occ:621 },
+          { name:'Salt Lake Stadium', city:'Kolkata, West Bengal', cap:2000, occ:487 },
+          { name:'Lucknow Civil Lines School', city:'Lucknow, Uttar Pradesh', cap:600, occ:395 },
+          { name:'Pune Fergusson College Ground', city:'Pune, Maharashtra', cap:1200, occ:280 },
+          { name:'Hyderabad NTR Gardens', city:'Hyderabad, Telangana', cap:1500, occ:823 },
+        ].map(s => {
+          const pct = Math.round(s.occ / s.cap * 100);
+          const cls = pct >= 90 ? 'full' : pct >= 70 ? 'high' : 'ok';
+          return `
+            <div class="shelter-card">
+              <div class="shelter-header">
+                <div class="shelter-name">${s.name}</div>
+                <div class="shelter-city">📍 ${s.city}</div>
+              </div>
+              <div class="shelter-body">
+                <div class="shelter-capacity-row">
+                  <div>
+                    <div style="font-size:13px;color:var(--gray-500)">Occupancy</div>
+                    <div style="font-size:14px;font-weight:600;color:var(--gray-800)">${s.occ.toLocaleString('en-IN')} / ${s.cap.toLocaleString('en-IN')}</div>
+                  </div>
+                  <div class="shelter-pct ${cls}">${pct}%</div>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill" style="width:${pct}%;background:${cls==='full'?'var(--critical)':cls==='high'?'var(--high)':'var(--low)'}"></div>
+                </div>
+                <div style="margin-top:var(--space-3)">
+                  <span class="badge ${cls==='full'?'critical':cls==='high'?'high':'low'}">${cls==='full'?'Nearly Full':cls==='high'?'Filling Fast':'Space Available'}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+
+      <!-- Contacts -->
+      <div class="grid-2 mb-8">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📞 Key Contacts</div>
+          </div>
+          <div class="card-body">
+            ${[
+              { icon:'🛡️', iconBg:'var(--critical-bg)', name:'NDRF Headquarters', desc:'National Disaster Response Force', num:'011-24363260' },
+              { icon:'🌊', iconBg:'var(--info-bg)', name:'NDMA Control Room', desc:'National Disaster Management Authority', num:'1800-180-1253' },
+              { icon:'🌧️', iconBg:'var(--brand-100)', name:'IMD Weather Alert', desc:'India Meteorological Department', num:'1800-180-1717' },
+              { icon:'🚑', iconBg:'var(--critical-bg)', name:'National Ambulance', desc:'Medical emergency response', num:'108' },
+              { icon:'🚒', iconBg:'var(--high-bg)', name:'Fire & Rescue', desc:'State fire services', num:'101' },
+              { icon:'👮', iconBg:'var(--gray-100)', name:'Police Emergency', desc:'Local law enforcement', num:'100' },
+            ].map(c => `
+              <div class="contact-row">
+                <div class="contact-icon" style="background:${c.iconBg}">${c.icon}</div>
+                <div>
+                  <div class="contact-name">${c.name}</div>
+                  <div class="contact-desc">${c.desc}</div>
+                </div>
+                <a href="tel:${c.num}" class="contact-num">${c.num}</a>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">✅ Flood Safety Tips</div>
+            <div class="card-subtitle">What to do during a flood</div>
+          </div>
+          <div class="card-body">
+            <div style="display:flex;flex-direction:column;gap:var(--space-3)">
+              ${[
+                { icon:'🚫', title:'Do Not Drive Through Floodwater', desc:'Even 15cm of fast-moving water can knock you off your feet. 30cm can carry away a car.' },
+                { icon:'📱', title:'Save Emergency Numbers', desc:'Store 1077, 108, 112 on speed dial before flood season.' },
+                { icon:'🏠', title:'Move to Higher Ground', desc:'Do not wait for instructions — move immediately when flooding begins.' },
+                { icon:'⚡', title:'Turn Off Electricity', desc:'Switch off at the main breaker if water is approaching your building.' },
+                { icon:'📦', title:'Prepare Emergency Kit', desc:'Keep water (3 days), food, medicines, torch, radio, and documents ready.' },
+                { icon:'📢', title:'Follow Official Alerts', desc:'Monitor NIRDESH, Doordarshan, and local administration for updates.' },
+              ].map(t => `
+                <div style="display:flex;gap:var(--space-3);align-items:flex-start">
+                  <div style="font-size:22px;flex-shrink:0">${t.icon}</div>
+                  <div>
+                    <div style="font-size:13px;font-weight:700;color:var(--gray-900)">${t.title}</div>
+                    <div style="font-size:12px;color:var(--gray-600);margin-top:2px;line-height:1.4">${t.desc}</div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script src="/js/sidebar.js"></script>
+<script src="/js/global.js"></script>
+</body>
+</html>

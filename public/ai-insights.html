@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Insights – NIRDESH</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌊</text></svg>">
+  <link rel="stylesheet" href="/css/global.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    .ai-hero {
+      background: linear-gradient(135deg, #0A2540 0%, #0D3B7A 60%, #004D40 100%);
+      border-radius: var(--radius-xl);
+      padding: var(--space-8) var(--space-10);
+      color: var(--white);
+      position: relative;
+      overflow: hidden;
+      margin-bottom: var(--space-8);
+    }
+
+    .ai-hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(circle at 10% 50%, rgba(30,136,229,0.2) 0%, transparent 40%),
+        radial-gradient(circle at 90% 20%, rgba(0,137,123,0.2) 0%, transparent 35%);
+    }
+
+    .ai-hero-content { position:relative; z-index:1; }
+
+    .ai-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 5px 14px;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--brand-200);
+      margin-bottom: var(--space-4);
+    }
+
+    .ai-hero h1 {
+      font-size: 28px;
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: var(--space-3);
+    }
+
+    .ai-hero p {
+      font-size: 15px;
+      color: rgba(255,255,255,0.7);
+      max-width: 560px;
+      line-height: 1.6;
+    }
+
+    .ai-metrics-row {
+      display: flex;
+      gap: var(--space-5);
+      margin-top: var(--space-6);
+      flex-wrap: wrap;
+    }
+
+    .ai-metric {
+      text-align: center;
+      min-width: 100px;
+    }
+    .ai-metric-val {
+      font-size: 32px;
+      font-weight: 900;
+      color: #64B5F6;
+      line-height: 1;
+    }
+    .ai-metric-label { font-size: 12px; color: rgba(255,255,255,0.6); margin-top: 4px; }
+
+    /* Prediction card */
+    .pred-card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      border: 1px solid var(--border-light);
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      overflow: hidden;
+      transition: all var(--duration-base);
+    }
+
+    .pred-card:hover { transform:translateY(-2px); box-shadow:var(--shadow-md); }
+
+    .pred-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: var(--space-4);
+    }
+
+    .pred-region { font-size: 15px; font-weight: 700; color: var(--gray-900); }
+    .pred-state  { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
+
+    .pred-confidence {
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--brand-700);
+      text-align: right;
+      line-height: 1;
+    }
+    .pred-conf-label { font-size: 11px; color: var(--gray-500); }
+
+    .pred-depth-display {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-bottom: var(--space-3);
+    }
+
+    .depth-visual {
+      width: 50px;
+      height: 60px;
+      background: var(--brand-100);
+      border-radius: var(--radius-sm);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .depth-fill {
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+      transition: height 1s var(--ease-out);
+    }
+
+    .pred-info { flex: 1; }
+    .pred-depth-num { font-size: 20px; font-weight: 800; color: var(--gray-900); }
+    .pred-depth-unit { font-size: 12px; color: var(--gray-500); }
+    .pred-horizon { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
+
+    /* CV Pipeline visualization */
+    .pipeline-step {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-4);
+      padding: var(--space-4) 0;
+      border-bottom: 1px solid var(--gray-100);
+      position: relative;
+    }
+
+    .pipeline-step:last-child { border-bottom: none; }
+
+    .pipeline-num {
+      width: 32px;
+      height: 32px;
+      background: var(--brand-600);
+      color: var(--white);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 800;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(21,101,192,0.3);
+    }
+
+    .pipeline-body { flex: 1; }
+    .pipeline-title { font-size: 14px; font-weight: 700; color: var(--gray-900); }
+    .pipeline-desc  { font-size: 12px; color: var(--gray-500); margin-top: 3px; line-height: 1.4; }
+
+    .pipeline-tech {
+      display: flex;
+      gap: var(--space-2);
+      margin-top: var(--space-2);
+      flex-wrap: wrap;
+    }
+
+    .tech-tag {
+      background: var(--brand-50);
+      color: var(--brand-700);
+      border: 1px solid var(--brand-200);
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 10px;
+    }
+
+    /* Data source card */
+    .source-card {
+      background: var(--gray-50);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .source-icon-box {
+      width: 42px;
+      height: 42px;
+      background: var(--white);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: var(--shadow-xs);
+      flex-shrink: 0;
+    }
+
+    .source-info { flex: 1; }
+    .source-name  { font-size: 13px; font-weight: 700; color: var(--gray-900); }
+    .source-desc  { font-size: 11px; color: var(--gray-500); margin-top: 2px; }
+    .source-status-active { font-size: 11px; font-weight: 600; color: var(--low); }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <div id="sidebar-placeholder" data-active="/ai-insights"></div>
+
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>🤖 AI Insights</h1>
+        <p id="live-clock">—</p>
+      </div>
+      <div class="topbar-actions">
+        <div class="live-pill"><div class="live-dot"></div> Model Active</div>
+        <button class="btn btn-primary btn-sm">🔄 Re-run Prediction</button>
+      </div>
+    </header>
+
+    <main class="page-body">
+
+      <!-- AI Hero -->
+      <div class="ai-hero">
+        <div class="ai-hero-content">
+          <div class="ai-badge">🤖 Powered by NIRDESH AI · v3.2.1</div>
+          <h1>Multi-Modal Flood Intelligence Engine</h1>
+          <p>Combining computer vision, geospatial analysis, sensor fusion, and deep learning to predict flood risk with 94.2% accuracy — before water levels become dangerous.</p>
+          <div class="ai-metrics-row">
+            <div class="ai-metric">
+              <div class="ai-metric-val">94.2%</div>
+              <div class="ai-metric-label">Model Accuracy</div>
+            </div>
+            <div class="ai-metric">
+              <div class="ai-metric-val">96.8%</div>
+              <div class="ai-metric-label">Recall Rate</div>
+            </div>
+            <div class="ai-metric">
+              <div class="ai-metric-val">3.1%</div>
+              <div class="ai-metric-label">False Positives</div>
+            </div>
+            <div class="ai-metric">
+              <div class="ai-metric-val">95.5</div>
+              <div class="ai-metric-label">F1 Score</div>
+            </div>
+            <div class="ai-metric">
+              <div class="ai-metric-val">6h</div>
+              <div class="ai-metric-label">Forecast Window</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main grid -->
+      <div class="grid-2 mb-8">
+
+        <!-- Flood Predictions -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">🎯 6-Hour Flood Forecast</div>
+              <div class="card-subtitle">AI-generated risk predictions · confidence weighted</div>
+            </div>
+            <div class="live-pill"><div class="live-dot"></div> Live</div>
+          </div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)" id="predictions-grid"></div>
+          </div>
+        </div>
+
+        <!-- Model performance radar -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">📊 Model Performance</div>
+              <div class="card-subtitle">Multi-metric radar · current vs baseline</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <canvas id="radar-chart" height="260"></canvas>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- AI Pipeline -->
+      <div class="grid-2 mb-8">
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">⚙️ AI Processing Pipeline</div>
+              <div class="card-subtitle">How NIRDESH detects and predicts floods</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div>
+              <div class="pipeline-step">
+                <div class="pipeline-num">1</div>
+                <div class="pipeline-body">
+                  <div class="pipeline-title">Multi-Source Data Ingestion</div>
+                  <div class="pipeline-desc">Streams from ISRO satellite, IMD rainfall, city CCTV network, IoT drainage sensors, and citizen reports ingested in real-time.</div>
+                  <div class="pipeline-tech">
+                    <span class="tech-tag">Apache Kafka</span>
+                    <span class="tech-tag">ISRO API</span>
+                    <span class="tech-tag">IMD Feed</span>
+                    <span class="tech-tag">RTSP Camera</span>
+                  </div>
+                </div>
+              </div>
+              <div class="pipeline-step">
+                <div class="pipeline-num">2</div>
+                <div class="pipeline-body">
+                  <div class="pipeline-title">Computer Vision Analysis</div>
+                  <div class="pipeline-desc">YOLOv8 + SegFormer detect water reflection, vehicle wakes, and waterlogging patterns in real-time CCTV feeds.</div>
+                  <div class="pipeline-tech">
+                    <span class="tech-tag">YOLOv8</span>
+                    <span class="tech-tag">SegFormer</span>
+                    <span class="tech-tag">OpenCV</span>
+                    <span class="tech-tag">NVIDIA GPU</span>
+                  </div>
+                </div>
+              </div>
+              <div class="pipeline-step">
+                <div class="pipeline-num">3</div>
+                <div class="pipeline-body">
+                  <div class="pipeline-title">Geospatial Feature Engineering</div>
+                  <div class="pipeline-desc">DEM elevation, drainage density, soil type, historical flood polygons, and road gradient extracted via GIS pipeline.</div>
+                  <div class="pipeline-tech">
+                    <span class="tech-tag">PostGIS</span>
+                    <span class="tech-tag">QGIS API</span>
+                    <span class="tech-tag">SRTM DEM</span>
+                    <span class="tech-tag">OSM Data</span>
+                  </div>
+                </div>
+              </div>
+              <div class="pipeline-step">
+                <div class="pipeline-num">4</div>
+                <div class="pipeline-body">
+                  <div class="pipeline-title">Flood Risk Prediction Model</div>
+                  <div class="pipeline-desc">XGBoost + LSTM ensemble trained on 6 years of historical data produces 6-hour forward predictions per road segment.</div>
+                  <div class="pipeline-tech">
+                    <span class="tech-tag">XGBoost</span>
+                    <span class="tech-tag">LSTM</span>
+                    <span class="tech-tag">Scikit-learn</span>
+                    <span class="tech-tag">TensorFlow</span>
+                  </div>
+                </div>
+              </div>
+              <div class="pipeline-step">
+                <div class="pipeline-num">5</div>
+                <div class="pipeline-body">
+                  <div class="pipeline-title">Alert Generation & Routing</div>
+                  <div class="pipeline-desc">Risk-scored segments trigger tiered alerts routed to authorities, NDRF, app users, and digital signage systems.</div>
+                  <div class="pipeline-tech">
+                    <span class="tech-tag">FCM Push</span>
+                    <span class="tech-tag">SMS Gateway</span>
+                    <span class="tech-tag">IVR System</span>
+                    <span class="tech-tag">Digital Boards</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Data Sources -->
+        <div>
+          <div class="card mb-6">
+            <div class="card-header">
+              <div>
+                <div class="card-title">📡 Live Data Sources</div>
+                <div class="card-subtitle">6 active pipelines feeding the AI model</div>
+              </div>
+              <span class="badge low">All Online</span>
+            </div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;gap:var(--space-3)" id="sources-grid"></div>
+            </div>
+          </div>
+
+          <!-- Confidence chart -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">🎯 Prediction Confidence</div>
+                <div class="card-subtitle">By flood severity level</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <canvas id="confidence-chart" height="180"></canvas>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Feature importance -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">🏆 Feature Importance</div>
+            <div class="card-subtitle">What drives the AI model's flood risk predictions</div>
+          </div>
+          <a href="/analytics" class="card-action">Full Analytics →</a>
+        </div>
+        <div class="card-body">
+          <canvas id="feature-chart" height="160"></canvas>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script src="/js/sidebar.js"></script>
+<script src="/js/global.js"></script>
+<script>
+// Predictions grid
+const predictions = [
+  { region:'Mumbai Suburbs', state:'Maharashtra', risk:'Critical', confidence:91, expected_depth_cm:85 },
+  { region:'Chennai Anna Nagar', state:'Tamil Nadu', risk:'High', confidence:87, expected_depth_cm:55 },
+  { region:'Hyderabad Secunderabad', state:'Telangana', risk:'High', confidence:83, expected_depth_cm:48 },
+  { region:'Pune Camp Area', state:'Maharashtra', risk:'Moderate', confidence:78, expected_depth_cm:30 },
+  { region:'Lucknow Gomtinagar', state:'UP', risk:'Critical', confidence:89, expected_depth_cm:78 },
+  { region:'Ahmedabad CG Road', state:'Gujarat', risk:'High', confidence:85, expected_depth_cm:52 },
+  { region:'Bengaluru Koramangala', state:'Karnataka', risk:'Low', confidence:72, expected_depth_cm:12 },
+  { region:'Kolkata Behala', state:'W. Bengal', risk:'Moderate', confidence:76, expected_depth_cm:28 },
+];
+
+const riskColors = { Critical:'var(--critical)', High:'var(--high)', Moderate:'var(--moderate)', Low:'var(--low)' };
+
+document.getElementById('predictions-grid').innerHTML = predictions.map(p => {
+  const fillH = Math.min(p.expected_depth_cm / 100 * 60, 60);
+  return `
+    <div class="pred-card">
+      <div class="pred-card-header">
+        <div>
+          <div class="pred-region">${p.region}</div>
+          <div class="pred-state">${p.state}</div>
+        </div>
+        <div>
+          <div class="pred-confidence">${p.confidence}%</div>
+          <div class="pred-conf-label">confidence</div>
+        </div>
+      </div>
+      <div class="pred-depth-display">
+        <div class="depth-visual">
+          <div class="depth-fill" style="height:${fillH}px;background:${riskColors[p.risk]};opacity:0.75"></div>
+        </div>
+        <div class="pred-info">
+          <div class="pred-depth-num">${p.expected_depth_cm}cm</div>
+          <div class="pred-depth-unit">Expected depth</div>
+          <div class="pred-horizon">Next 6 hours</div>
+        </div>
+      </div>
+      <span class="badge ${p.risk.toLowerCase()}">${p.risk}</span>
+    </div>
+  `;
+}).join('');
+
+// Data sources
+const sources = [
+  { icon:'🛰️', name:'ISRO Satellite Feed',    desc:'30-min repeat coverage · optical + SAR', time:'2 min ago' },
+  { icon:'🌧️', name:'IMD Rainfall Data',       desc:'Rain gauge network + WRF model output', time:'5 min ago' },
+  { icon:'📸', name:'City CCTV Network',        desc:'1,847 cameras · real-time CV inference', time:'30 sec ago' },
+  { icon:'📢', name:'Citizen Reports API',      desc:'Verified crowd-sourced observations',   time:'Real-time' },
+  { icon:'🚰', name:'Drainage Sensor Grid',     desc:'8,420 ultrasonic level sensors',        time:'1 min ago' },
+  { icon:'📊', name:'Historical Flood DB',      desc:'6-year incident record · 2019–2024',   time:'Static'   },
+];
+
+document.getElementById('sources-grid').innerHTML = sources.map(s => `
+  <div class="source-card">
+    <div class="source-icon-box">${s.icon}</div>
+    <div class="source-info">
+      <div class="source-name">${s.name}</div>
+      <div class="source-desc">${s.desc}</div>
+    </div>
+    <div>
+      <div class="source-status-active">● Live</div>
+      <div style="font-size:11px;color:var(--gray-400)">${s.time}</div>
+    </div>
+  </div>
+`).join('');
+
+// Radar chart
+new Chart(document.getElementById('radar-chart').getContext('2d'), {
+  type: 'radar',
+  data: {
+    labels: ['Accuracy', 'Precision', 'Recall', 'F1 Score', 'Speed', 'Coverage'],
+    datasets: [
+      {
+        label: 'NIRDESH v3.2',
+        data: [94.2, 93.1, 96.8, 95.5, 90, 87],
+        backgroundColor: 'rgba(21,101,192,0.15)',
+        borderColor: '#1565C0',
+        borderWidth: 2.5,
+        pointBackgroundColor: '#1565C0',
+        pointRadius: 4,
+      },
+      {
+        label: 'Baseline v1.0',
+        data: [78, 75, 80, 77, 65, 60],
+        backgroundColor: 'rgba(0,0,0,0.04)',
+        borderColor: '#9CA3AF',
+        borderWidth: 1.5,
+        borderDash: [4, 4],
+        pointBackgroundColor: '#9CA3AF',
+        pointRadius: 3,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { position:'top' } },
+    scales: {
+      r: {
+        min: 50,
+        max: 100,
+        ticks: { stepSize: 10 },
+        grid: { color: 'rgba(0,0,0,0.08)' },
+        pointLabels: { font: { size: 12 } }
+      }
+    }
+  }
+});
+
+// Confidence chart
+new Chart(document.getElementById('confidence-chart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: ['Critical','High','Moderate','Low'],
+    datasets: [{
+      label: 'Avg Confidence %',
+      data: [91.2, 85.8, 78.3, 72.1],
+      backgroundColor: ['rgba(211,47,47,0.8)','rgba(245,124,0,0.8)','rgba(249,168,37,0.8)','rgba(56,142,60,0.8)'],
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display:false } },
+    scales: {
+      y: { min:60, max:100, grid:{ color:'rgba(0,0,0,0.05)' } },
+      x: { grid:{ display:false } }
+    }
+  }
+});
+
+// Feature importance
+new Chart(document.getElementById('feature-chart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: [
+      'Real-time Rainfall (IMD)', 'Drainage Level (IoT)', 'DEM Elevation', 'Historical Flood Freq',
+      'CV Waterlog Detection', 'Soil Infiltration Rate', 'Drain Blockage Status', 'Population Density'
+    ],
+    datasets: [{
+      label: 'Feature Importance Score',
+      data: [0.28, 0.21, 0.16, 0.13, 0.10, 0.06, 0.04, 0.02],
+      backgroundColor: [
+        'rgba(21,101,192,0.9)', 'rgba(21,101,192,0.75)', 'rgba(0,137,123,0.8)',
+        'rgba(0,137,123,0.65)', 'rgba(21,101,192,0.6)', 'rgba(0,137,123,0.5)',
+        'rgba(21,101,192,0.45)', 'rgba(0,137,123,0.4)'
+      ],
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    plugins: {
+      legend: { display:false },
+      tooltip: { callbacks: { label: ctx => ` ${(ctx.raw * 100).toFixed(0)}% importance` } }
+    },
+    scales: {
+      x: { max:0.35, grid:{ color:'rgba(0,0,0,0.05)' }, ticks:{ callback: v => (v*100)+'%' } },
+      y: { grid:{ display:false } }
+    }
+  }
+});
+</script>
+</body>
+</html>
